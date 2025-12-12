@@ -1,0 +1,214 @@
+# Persian Transcriber Configuration
+# Copy this file to your project root and customize as needed.
+
+# =============================================================================
+# CUDA / GPU Settings
+# =============================================================================
+cuda:
+  # CUDA installation path (auto-detected if null)
+  # Windows: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.x
+  # Linux: /usr/local/cuda
+  # macOS: null (uses MPS instead)
+  cuda_home_path: null
+  
+  # Additional library paths to search for CUDA libraries
+  # These are searched in order after cuda_home_path
+  library_paths:
+    windows:
+      - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4\\bin"
+      - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\bin"
+    linux:
+      - "/usr/local/cuda/lib64"
+      - "/usr/lib/x86_64-linux-gnu"
+    darwin: []  # macOS uses MPS, not CUDA
+  
+  # Use FP16 (half precision) for faster inference on supported GPUs
+  # Recommended: true for RTX 20xx+ series, false for older GPUs
+  use_fp16: true
+  
+  # Compute type for Faster-Whisper engine
+  # Options: float16, int8, int8_float16, float32
+  # - float16: Fast, good quality (requires GPU with FP16 support)
+  # - int8: Fastest, slightly lower quality
+  # - int8_float16: Balance of speed and quality
+  # - float32: Highest quality, slowest (CPU fallback)
+  compute_type: "float16"
+  
+  # Automatically fall back to CPU if CUDA is unavailable
+  fallback_to_cpu: true
+  
+  # Device selection: auto, cuda, cpu, mps (macOS)
+  device: "auto"
+
+# =============================================================================
+# Transcription Settings
+# =============================================================================
+transcription:
+  # Default transcription engine
+  # Options: faster_whisper, whisper, openai_api, google
+  default_engine: "faster_whisper"
+  
+  # Model size for Whisper-based engines
+  # Options: tiny, base, small, medium, large-v2, large-v3
+  # Larger models = better accuracy but slower and more VRAM
+  model_size: "medium"
+  
+  # Default language for transcription
+  # Use ISO 639-1 codes: fa (Persian/Farsi), en (English), ar (Arabic), etc.
+  # Set to null for auto-detection
+  language: "fa"
+  
+  # Batch size for processing (affects memory usage)
+  # Reduce if running out of VRAM
+  batch_size: 16
+  
+  # Beam size for decoding (higher = better quality, slower)
+  beam_size: 5
+  
+  # Voice Activity Detection (VAD) filter
+  # Removes silence and improves accuracy
+  vad_filter: true
+  
+  # VAD parameters (only used if vad_filter is true)
+  vad_parameters:
+    threshold: 0.5
+    min_speech_duration_ms: 250
+    min_silence_duration_ms: 100
+
+# =============================================================================
+# Text Normalization
+# =============================================================================
+normalization:
+  # Enable Persian text normalization
+  enabled: true
+  
+  # Normalizer type: persian (uses Hazm), basic (simple character mapping)
+  type: "persian"
+  
+  # Character replacements (Arabic to Persian)
+  # These are applied regardless of normalizer type
+  character_map:
+    "ك": "ک"  # Arabic Kaf -> Persian Kaf
+    "ي": "ی"  # Arabic Yeh -> Persian Yeh
+    "ة": "ه"  # Arabic Teh Marbuta -> Persian Heh
+    "٤": "۴"  # Arabic-Indic 4 -> Persian 4
+    "٥": "۵"  # Arabic-Indic 5 -> Persian 5
+    "٦": "۶"  # Arabic-Indic 6 -> Persian 6
+
+# =============================================================================
+# Output Settings
+# =============================================================================
+output:
+  # Default output format: txt, json, srt, vtt
+  format: "txt"
+  
+  # Output directory (null = same as input file)
+  directory: null
+  
+  # Include timestamps in text output
+  include_timestamps: false
+  
+  # JSON output options
+  json:
+    indent: 2
+    ensure_ascii: false
+    include_metadata: true
+  
+  # Subtitle options (SRT/VTT)
+  subtitles:
+    max_line_length: 42
+    max_lines_per_segment: 2
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Log file path (null = console only)
+  # Supports placeholders: {date}, {time}
+  log_file_path: null
+  
+  # Log format
+  # Available fields: asctime, name, levelname, message, filename, lineno
+  format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+  
+  # Date format for log timestamps
+  date_format: "%Y-%m-%d %H:%M:%S"
+  
+  # Enable colored console output
+  use_colors: true
+  
+  # Color scheme for different log levels
+  colors:
+    DEBUG: "cyan"
+    INFO: "green"
+    WARNING: "yellow"
+    ERROR: "red"
+    CRITICAL: "red,bold"
+
+# =============================================================================
+# API Configuration
+# =============================================================================
+api:
+  # OpenAI API settings (for openai_api engine)
+  openai:
+    # API key (recommended: use OPENAI_API_KEY environment variable instead)
+    api_key: null
+    
+    # API base URL (for Azure OpenAI or custom endpoints)
+    base_url: null
+    
+    # Model to use for transcription
+    model: "whisper-1"
+    
+    # Request timeout in seconds
+    timeout: 300
+    
+    # Maximum retries on failure
+    max_retries: 3
+
+# =============================================================================
+# File Processing
+# =============================================================================
+files:
+  # Supported audio formats
+  audio_extensions:
+    - ".mp3"
+    - ".wav"
+    - ".flac"
+    - ".ogg"
+    - ".m4a"
+    - ".aac"
+    - ".wma"
+    - ".opus"
+  
+  # Supported video formats
+  video_extensions:
+    - ".mp4"
+    - ".mkv"
+    - ".avi"
+    - ".mov"
+    - ".webm"
+    - ".wmv"
+    - ".flv"
+  
+  # Temporary file directory (null = system temp)
+  temp_directory: null
+  
+  # Clean up temporary files after processing
+  cleanup_temp_files: true
+
+# =============================================================================
+# Performance Tuning
+# =============================================================================
+performance:
+  # Number of worker threads for batch processing
+  num_workers: 4
+  
+  # Enable memory-mapped file loading
+  use_mmap: true
+  
+  # Maximum concurrent transcriptions (for batch mode)
+  max_concurrent: 1

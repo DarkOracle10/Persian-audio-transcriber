@@ -1,0 +1,125 @@
+# =============================================================================
+# Persian Transcriber - Requirements
+# =============================================================================
+# Install with: pip install -r requirements.txt
+# For development: pip install -r requirements-dev.txt
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# CORE DEPENDENCIES (Required)
+# -----------------------------------------------------------------------------
+# These packages are required for basic functionality
+
+# Configuration & Environment
+pyyaml==6.0.2
+python-dotenv==1.1.0
+
+# HTTP & API clients
+httpx==0.28.1
+certifi==2025.10.5
+idna==3.11
+charset-normalizer==3.4.4
+
+# CLI & Terminal
+click==8.3.0
+colorama==0.4.6
+
+# File handling
+filelock==3.20.0
+
+# Hugging Face Hub (for model downloads)
+huggingface-hub==1.1.2
+
+# -----------------------------------------------------------------------------
+# TRANSCRIPTION ENGINES (Choose based on your needs)
+# -----------------------------------------------------------------------------
+
+# Option A: Faster-Whisper (RECOMMENDED - fastest, lowest VRAM)
+# Uses CTranslate2 for optimized inference
+faster-whisper==1.2.1
+ctranslate2==4.6.1
+
+# Option B: OpenAI Whisper (original implementation)
+# Uncomment if you prefer the original Whisper
+# openai-whisper==20240930
+
+# Option C: OpenAI API (cloud-based, requires API key)
+# Uncomment if using OpenAI's API for transcription
+openai==1.86.0
+
+# Option D: Google Speech Recognition
+# Uncomment if using Google's speech recognition
+SpeechRecognition==3.14.3
+
+# -----------------------------------------------------------------------------
+# AUDIO/VIDEO PROCESSING (Required)
+# -----------------------------------------------------------------------------
+
+# FFmpeg Python bindings
+ffmpeg-python==0.2.0
+
+# Audio manipulation
+pydub==0.25.1
+# Note: pydub requires FFmpeg to be installed on your system
+# Windows: choco install ffmpeg OR download from https://ffmpeg.org
+# Linux: sudo apt install ffmpeg
+# macOS: brew install ffmpeg
+
+# Audio codec support
+audioop-lts==0.2.2
+
+# PyAV for advanced video processing
+av==16.0.1
+
+# -----------------------------------------------------------------------------
+# PERSIAN TEXT PROCESSING (Required for Persian/Farsi)
+# -----------------------------------------------------------------------------
+
+# Hazm - Persian NLP toolkit
+hazm==0.10.0
+
+# Flash text for fast keyword extraction
+flashtext==2.7
+
+# -----------------------------------------------------------------------------
+# GPU ACCELERATION (Optional but recommended)
+# -----------------------------------------------------------------------------
+# Uncomment the appropriate section for your system
+
+# --- NVIDIA CUDA (Windows/Linux) ---
+# torch==2.7.1
+# torchaudio==2.7.1
+# Note: For CUDA support, install with:
+# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# --- Apple Silicon (macOS M1/M2/M3) ---
+# torch==2.7.1
+# torchaudio==2.7.1
+# Note: MPS acceleration is automatic on Apple Silicon
+
+# --- CPU Only ---
+# torch==2.7.1
+# torchaudio==2.7.1
+# Note: For CPU-only, install with:
+# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# -----------------------------------------------------------------------------
+# UTILITIES
+# -----------------------------------------------------------------------------
+
+# Logging enhancements
+coloredlogs==15.0.1
+humanfriendly==10.0
+
+# Progress bars (optional)
+tqdm==4.67.1
+
+# Type checking support
+typing-extensions==4.14.0
+
+# Async support
+anyio==4.11.0
+sniffio==1.3.1
+
+# JSON parsing
+jiter==0.12.0
