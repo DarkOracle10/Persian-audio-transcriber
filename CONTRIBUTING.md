@@ -97,6 +97,29 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+## Setting Up Code Coverage (For Repository Maintainers)
+
+This repository uses [Codecov](https://codecov.io) for tracking code coverage. To enable code coverage reporting in GitHub Actions, the `CODECOV_TOKEN` secret needs to be configured.
+
+### Adding the CODECOV_TOKEN Secret
+
+1. Go to https://github.com/DarkOracle10/Voice-Transcriber
+2. Click **Settings** (top bar of the repo)
+3. In the left sidebar, under **Security**, choose **Secrets and variables** → **Actions**
+4. Click **New repository secret**
+5. Set **Name** to `CODECOV_TOKEN`
+6. Paste your Codecov token into **Secret**
+7. Click **Add secret**
+
+### Getting Your Codecov Token
+
+1. Sign up or log in at https://codecov.io
+2. Add your repository to Codecov
+3. Copy the token provided by Codecov for your repository
+4. Use this token in the steps above
+
+Once configured, the CI workflow will automatically upload coverage reports to Codecov after running tests.
+
 ## Questions?
 
 Feel free to open an issue for questions or discussions.
