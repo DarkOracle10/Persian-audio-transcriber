@@ -115,10 +115,23 @@ This repository uses [Codecov](https://codecov.io) for tracking code coverage. T
 
 ### Getting Your Codecov Token
 
-1. Sign up or log in at https://codecov.io
-2. Add your repository to Codecov
-3. Copy the token provided by Codecov for your repository
-4. Use this token in the steps above
+1. **Sign up or log in** at https://codecov.io
+   - You can sign in using your GitHub account
+
+2. **Add your repository to Codecov**:
+   - Click on "Add new repository" or the "+" icon
+   - Select your GitHub organization/account (DarkOracle10)
+   - Find and select the "Voice-Transcriber" repository from the list
+   - Click to enable it
+
+3. **Get your upload token**:
+   - Once the repository is added, you'll be taken to the repository settings
+   - Look for the "Settings" tab in Codecov
+   - Find the "Upload Token" or "Repository Upload Token" section
+   - Click to reveal or copy the token (it's a long alphanumeric string)
+   - Alternatively, it may be shown on the initial setup page
+
+4. **Use this token** in the GitHub secret configuration steps above
 
 Once configured, the CI workflow will automatically upload coverage reports to Codecov after running tests.
 
