@@ -103,6 +103,8 @@ This repository uses [Codecov](https://codecov.io) for tracking code coverage. T
 
 ### Adding the CODECOV_TOKEN Secret
 
+**Note**: These instructions are for the main repository maintainers. If you have forked this repository, replace the URL with your fork's URL.
+
 1. Go to https://github.com/DarkOracle10/Voice-Transcriber
 2. Click **Settings** (top bar of the repo)
 3. In the left sidebar, under **Security**, choose **Secrets and variables** → **Actions**
