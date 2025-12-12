@@ -122,6 +122,12 @@ This repository uses [Codecov](https://codecov.io) for tracking code coverage. T
 
 Once configured, the CI workflow will automatically upload coverage reports to Codecov after running tests.
 
+**Note on Pull Requests**: For security reasons, GitHub Actions does not provide secrets to workflows triggered by pull requests from forks. The CI workflow is configured to only upload coverage reports for:
+- Pushes to the main branch
+- Pull requests from branches within the same repository
+
+This prevents potential security issues while still allowing the test suite to run on all pull requests.
+
 ## Questions?
 
 Feel free to open an issue for questions or discussions.
