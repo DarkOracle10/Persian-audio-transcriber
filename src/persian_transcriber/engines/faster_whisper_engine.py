@@ -6,6 +6,7 @@ for optimized inference with GPU acceleration.
 """
 
 import logging
+import re
 from pathlib import Path
 from typing import Any, List, Optional, Union
 
@@ -14,6 +15,59 @@ from ..utils.exceptions import EngineError, ModelLoadError
 from .base import BaseEngine, EngineType, TranscriptionResult, TranscriptionSegment
 
 logger = logging.getLogger(__name__)
+
+
+# Initial prompts for different languages to guide the model
+LANGUAGE_INITIAL_PROMPTS = {
+    "fa": "این یک متن فارسی است.",
+    "ar": "هذا نص عربي.",
+    "zh": "这是中文文本。",
+    "ja": "これは日本語のテキストです。",
+    "ko": "이것은 한국어 텍스트입니다.",
+}
+
+
+def _remove_repetitions(text: str, threshold: int = 3) -> str:
+    """
+    Remove repeated phrases from transcription output.
+    
+    Args:
+        text: The transcription text to clean
+        threshold: Minimum number of repetitions to trigger removal
+        
+    Returns:
+        Cleaned text with repetitions removed
+    """
+    if not text:
+        return text
+    
+    # Pattern to find repeated phrases (3+ word sequences repeated)
+    # This handles cases like "word word word" or "phrase phrase phrase"
+    pattern = r'(\b.{3,50}?\b)(?:\s*\1){' + str(threshold - 1) + r',}'
+    cleaned = re.sub(pattern, r'\1', text, flags=re.UNICODE)
+    
+    # Also handle simple word repetitions like "و و و و"
+    word_pattern = r'(\b\S+\b)(?:\s+\1){' + str(threshold - 1) + r',}'
+    cleaned = re.sub(word_pattern, r'\1', cleaned, flags=re.UNICODE)
+    
+    return cleaned
+
+
+def _add_punctuation_breaks(text: str) -> str:
+    """
+    Add line breaks after Persian/Arabic punctuation for better readability.
+    
+    Args:
+        text: The text to format
+        
+    Returns:
+        Text with line breaks after sentence-ending punctuation
+    """
+    # Add line break after Persian/Arabic full stop, question mark, exclamation
+    text = re.sub(r'([.؟!،])\s*', r'\1\n', text)
+    # Clean up multiple newlines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 
 class FasterWhisperEngine(BaseEngine):
@@ -229,9 +283,12 @@ class FasterWhisperEngine(BaseEngine):
         no_speech_threshold: float = 0.6,
         condition_on_previous_text: bool = True,
         initial_prompt: Optional[str] = None,
-        word_timestamps: bool = False,
-        vad_filter: bool = False,
+        word_timestamps: bool = True,  # Enable by default for hallucination detection
+        vad_filter: bool = True,  # Enable by default for better segmentation
         vad_parameters: Optional[dict] = None,
+        repetition_penalty: float = 1.1,  # Anti-repetition
+        no_repeat_ngram_size: int = 3,  # Prevent n-gram repetition
+        hallucination_silence_threshold: Optional[float] = 2.0,  # Skip hallucinations in silence
         **kwargs: Any,
     ) -> TranscriptionResult:
         """
@@ -251,9 +308,12 @@ class FasterWhisperEngine(BaseEngine):
             no_speech_threshold: Threshold for no_speech probability.
             condition_on_previous_text: Use previous output as prompt.
             initial_prompt: Optional initial prompt for the model.
-            word_timestamps: Extract word-level timestamps.
-            vad_filter: Enable voice activity detection filter.
+            word_timestamps: Extract word-level timestamps (enabled by default).
+            vad_filter: Enable voice activity detection filter (enabled by default).
             vad_parameters: Parameters for VAD filter.
+            repetition_penalty: Penalty for repeated tokens (1.1 recommended).
+            no_repeat_ngram_size: Size of n-grams to prevent repetition.
+            hallucination_silence_threshold: Skip text during silence periods.
             **kwargs: Additional arguments.
             
         Returns:
@@ -275,7 +335,18 @@ class FasterWhisperEngine(BaseEngine):
         logger.info(f"Transcribing with Faster-Whisper: {audio_path.name}")
         
         try:
-            # Run transcription
+            # Set default VAD parameters if not provided
+            if vad_parameters is None:
+                vad_parameters = {
+                    "min_silence_duration_ms": 500,
+                }
+            
+            # Auto-set initial prompt for supported languages if not provided
+            if initial_prompt is None and language in LANGUAGE_INITIAL_PROMPTS:
+                initial_prompt = LANGUAGE_INITIAL_PROMPTS[language]
+                logger.debug(f"Using default initial prompt for {language}: {initial_prompt}")
+            
+            # Run transcription with anti-repetition settings
             segments_generator, info = self._model.transcribe(
                 str(audio_path),
                 language=language,
@@ -293,6 +364,9 @@ class FasterWhisperEngine(BaseEngine):
                 word_timestamps=word_timestamps,
                 vad_filter=vad_filter,
                 vad_parameters=vad_parameters,
+                repetition_penalty=repetition_penalty,
+                no_repeat_ngram_size=no_repeat_ngram_size,
+                hallucination_silence_threshold=hallucination_silence_threshold,
             )
             
             # Collect segments
@@ -301,6 +375,8 @@ class FasterWhisperEngine(BaseEngine):
             
             for seg in segments_generator:
                 segment_text = seg.text.strip()
+                # Apply post-processing to remove repetitions
+                segment_text = _remove_repetitions(segment_text)
                 full_text_parts.append(segment_text)
                 
                 # Build word list if available
@@ -326,11 +402,17 @@ class FasterWhisperEngine(BaseEngine):
                     )
                 )
             
+            # Join and apply final post-processing
             full_text = " ".join(full_text_parts)
+            full_text = _remove_repetitions(full_text)
+            
+            # Apply formatting for RTL languages (Persian, Arabic)
+            if language in ("fa", "ar"):
+                full_text = _add_punctuation_breaks(full_text)
             
             return TranscriptionResult(
                 text=full_text,
-                text_raw=full_text,
+                text_raw=" ".join(full_text_parts),  # Keep raw without formatting
                 segments=segments,
                 language=info.language if info.language else language,
                 language_probability=info.language_probability if hasattr(info, "language_probability") else None,
@@ -342,6 +424,7 @@ class FasterWhisperEngine(BaseEngine):
                     "compute_type": self._actual_compute_type,
                     "task": task,
                     "vad_filter": vad_filter,
+                    "initial_prompt": initial_prompt,
                 },
             )
             

@@ -3,17 +3,17 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "persian-transcriber"
-version = "2.0.0"
-description = "GPU-accelerated audio/video transcription tool with Persian/Farsi language support"
+name = "voice-transcriber"
+version = "1.0.0"
+description = "GPU-accelerated voice transcription toolkit with Persian/Farsi language support"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.8"
 authors = [
-    {name = "Dark Oracle", email = "darkoracle3860@gmail.com"}
+    {name = "DarkOracle10", email = "darkoracle3860@gmail.com"}
 ]
 maintainers = [
-    {name = "Dark Oracle", email = "darkoracle3860@gmail.com"}
+    {name = "DarkOracle10", email = "darkoracle3860@gmail.com"}
 ]
 keywords = [
     "transcription",
@@ -46,10 +46,21 @@ classifiers = [
 ]
 
 dependencies = [
-    "openai-whisper>=20231117",
-    "faster-whisper>=1.0.0",
+    "pyyaml>=6.0.2",
+    "python-dotenv>=1.1.0",
+    "httpx>=0.28.1",
+    "certifi>=2025.10.5",
+    "click>=8.3.0",
+    "colorama>=0.4.6",
+    "faster-whisper>=1.2.1",
+    "ctranslate2>=4.6.1",
+    "openai>=1.86.0",
+    "ffmpeg-python>=0.1.17",
     "pydub>=0.25.1",
-    "numpy>=1.24.0",
+    "av>=16.0.1",
+    "coloredlogs>=15.0.1",
+    "tqdm>=4.67.1",
+    "typing-extensions>=4.14.0",
 ]
 
 [project.optional-dependencies]
@@ -58,52 +69,43 @@ persian = [
 ]
 gpu = [
     "torch>=2.0.0",
-    "nvidia-cudnn-cu12>=9.0.0",
-    "nvidia-cublas-cu12>=12.0.0",
-]
-openai = [
-    "openai>=1.0.0",
-]
-google = [
-    "SpeechRecognition>=3.10.0",
+    "torchaudio>=2.0.0",
 ]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "pytest-asyncio>=0.21.0",
-    "mypy>=1.0.0",
-    "ruff>=0.1.0",
-    "black>=23.0.0",
-    "pre-commit>=3.0.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-asyncio>=1.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.11.12",
+    "black>=25.1.0",
+    "mypy>=1.16.0",
+    "types-pyyaml>=6.0.12",
 ]
 docs = [
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.0.0",
-    "mkdocstrings[python]>=0.24.0",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.5",
+    "mkdocstrings>=0.29.1",
 ]
 all = [
-    "persian-transcriber[persian,gpu,openai,google,dev,docs]",
+    "voice-transcriber[persian,gpu,dev,docs]",
 ]
 
 [project.scripts]
-persian-transcribe = "persian_transcriber.cli:main"
-ptranscribe = "persian_transcriber.cli:main"
+voice-transcriber = "persian_transcriber.cli:main"
+vtranscribe = "persian_transcriber.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/darkoracle/persian-transcriber"
-Documentation = "https://github.com/darkoracle/persian-transcriber#readme"
-Repository = "https://github.com/darkoracle/persian-transcriber.git"
-Issues = "https://github.com/darkoracle/persian-transcriber/issues"
-Changelog = "https://github.com/darkoracle/persian-transcriber/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/DarkOracle10/Voice-Transcriber"
+Documentation = "https://github.com/DarkOracle10/Voice-Transcriber#readme"
+Repository = "https://github.com/DarkOracle10/Voice-Transcriber.git"
+Issues = "https://github.com/DarkOracle10/Voice-Transcriber/issues"
+Changelog = "https://github.com/DarkOracle10/Voice-Transcriber/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-persian_transcriber = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -122,7 +124,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/persian_transcriber"]
+source = ["src"]
 branch = true
 omit = [
     "*/tests/*",

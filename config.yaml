@@ -9,14 +9,14 @@ cuda:
   # Windows: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.x
   # Linux: /usr/local/cuda
   # macOS: null (uses MPS instead)
-  cuda_home_path: null
+  cuda_home_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.5"
   
   # Additional library paths to search for CUDA libraries
   # These are searched in order after cuda_home_path
   library_paths:
     windows:
-      - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4\\bin"
-      - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\bin"
+          - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.5\\bin"
+          - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.0\\bin"
     linux:
       - "/usr/local/cuda/lib64"
       - "/usr/lib/x86_64-linux-gnu"

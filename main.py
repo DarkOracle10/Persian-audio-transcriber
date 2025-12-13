@@ -1,51 +1,18 @@
 import os
-import sys
-import re
 import json
 import tempfile
 from pathlib import Path
 from typing import List, Dict, Optional
 from datetime import datetime
 
-# Add NVIDIA CUDA DLL paths to PATH BEFORE any GPU-related imports
-# This ensures CTranslate2 (used by faster-whisper) can find the DLLs
-def _setup_cuda_dll_paths():
-    """Add NVIDIA CUDA DLL paths to environment PATH at module load time"""
-    import site
-    current_path = os.environ.get('PATH', '')
-    paths_to_add = []
-    
-    # Priority 1: System CUDA 12.x bin directories (most reliable)
-    cuda_install_base = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA"
-    if os.path.exists(cuda_install_base):
-        # Check for CUDA 12.x versions (prioritize 12.5, 12.4, etc.)
-        for version in ['12.5', '12.4', '12.3', '12.2', '12.1', '12.0', 'v12.5', 'v12.4', 'v12.3', 'v12.2', 'v12.1', 'v12.0']:
-            cuda_bin = os.path.join(cuda_install_base, f'v{version}' if not version.startswith('v') else version, 'bin')
-            if os.path.exists(cuda_bin) and os.path.exists(os.path.join(cuda_bin, 'cublas64_12.dll')):
-                if cuda_bin not in current_path:
-                    paths_to_add.insert(0, cuda_bin)  # Add at beginning (highest priority)
-                break  # Use first found CUDA 12 version
-    
-    # Priority 2: Python package NVIDIA DLLs (installed via pip)
-    try:
-        site_packages = site.getsitepackages()[0] if site.getsitepackages() else os.path.join(sys.prefix, 'Lib', 'site-packages')
-        cublas_bin = os.path.join(site_packages, 'nvidia', 'cublas', 'bin')
-        cudnn_bin = os.path.join(site_packages, 'nvidia', 'cudnn', 'bin')
-        
-        if os.path.exists(cublas_bin) and cublas_bin not in current_path:
-            paths_to_add.append(cublas_bin)
-        if os.path.exists(cudnn_bin) and cudnn_bin not in current_path:
-            paths_to_add.append(cudnn_bin)
-    except:
-        pass  # Ignore errors during PATH setup
-    
-    # Add all paths to the beginning of PATH (so they're found first)
-    if paths_to_add:
-        new_paths = os.pathsep.join(paths_to_add)
-        os.environ['PATH'] = new_paths + os.pathsep + current_path
+from src.utils.cuda_setup import setup_cuda_dll_paths
+from src.utils.normalizer import BasicPersianNormalizer
 
-# Set up CUDA DLL paths immediately when module loads
-_setup_cuda_dll_paths()
+# Configure CUDA library paths before importing GPU-dependent modules.
+try:
+    setup_cuda_dll_paths()
+except (RuntimeError, ValueError) as cuda_error:
+    print(f"[WARNING] CUDA path configuration skipped: {cuda_error}")
 
 # Persian text processing
 HAZM_AVAILABLE = False
@@ -65,55 +32,40 @@ except (ImportError, ModuleNotFoundError) as e:
 except Exception as e:
     # Catch any other errors (like AttributeError from pkgutil)
     HAZM_AVAILABLE = False
-
-
-class BasicPersianNormalizer:
-    """
-    Basic Persian text normalizer (fallback when hazm is not available)
-    Handles Arabic to Persian character conversion and basic text cleanup
-    """
-    def __init__(self):
-        # Arabic to Persian character mappings
-        self.persian_mappings = {
-            'ك': 'ک',  # Arabic kaf to Persian kaf
-            'ي': 'ی',  # Arabic yeh to Persian yeh
-            'ى': 'ی',  # Arabic alef maksura to Persian yeh
-            'ؤ': 'و',  # Arabic waw with hamza
-            'أ': 'ا',  # Arabic alef with hamza above
-            'ئ': 'ی',  # Arabic yeh with hamza
-            'ة': 'ه',  # Arabic teh marbuta
-            'إ': 'ا',  # Arabic alef with hamza below
-            'ء': '',   # Arabic hamza (often removed)
-            'آ': 'آ',  # Persian alef with maddah (keep as is)
-        }
-    
-    def normalize(self, text: str) -> str:
-        """
-        Normalize Persian text:
-        1. Convert Arabic characters to Persian
-        2. Normalize whitespace (multiple spaces to single)
-        3. Trim extra spaces
-        """
-        if not text:
-            return text
-        
-        # Convert Arabic characters to Persian
-        normalized = text
-        for arabic_char, persian_char in self.persian_mappings.items():
-            normalized = normalized.replace(arabic_char, persian_char)
-        
-        # Normalize whitespace (multiple spaces/tabs/newlines to single space)
-        normalized = re.sub(r'\s+', ' ', normalized)
-        
-        # Trim leading/trailing spaces
-        normalized = normalized.strip()
-        
-        return normalized
-
-
 # Use hazm if available, otherwise use basic normalizer
 if not HAZM_AVAILABLE:
     PersianNormalizer = BasicPersianNormalizer
+
+
+# Persian initial prompts to help guide transcription output
+# These help the model produce proper Persian script instead of Arabic
+PERSIAN_INITIAL_PROMPTS = {
+    "fa": "این یک متن فارسی است.",  # "This is a Persian text."
+    "fa-lecture": "بسم الله الرحمن الرحیم. این متن فارسی در مورد موضوعات آموزشی است.",
+    "fa-conversation": "سلام، خوبی؟ این یک مکالمه فارسی است.",
+}
+
+# Recommended minimum model sizes for different languages
+# Persian/Arabic script languages need larger models for accuracy
+MINIMUM_MODEL_SIZES = {
+    "fa": "medium",  # Persian needs at least medium
+    "ar": "medium",  # Arabic needs at least medium  
+    "zh": "medium",  # Chinese needs at least medium
+    "ja": "medium",  # Japanese needs at least medium
+    "ko": "medium",  # Korean needs at least medium
+    "default": "small",
+}
+
+# Model size ranking for comparison
+MODEL_SIZE_RANK = {
+    "tiny": 1, "tiny.en": 1,
+    "base": 2, "base.en": 2,
+    "small": 3, "small.en": 3,
+    "medium": 4, "medium.en": 4,
+    "large": 5, "large-v1": 5, "large-v2": 5, "large-v3": 6,
+    "turbo": 5,
+    "distil-large-v2": 5, "distil-large-v3": 5,
+}
 
 
 class PersianAudioTranscriber:
@@ -123,7 +75,7 @@ class PersianAudioTranscriber:
     """
     
     def __init__(self, engine="whisper", model_size="medium", api_key=None, 
-                 language="fa", normalize_persian=True):
+                 language="fa", normalize_persian=True, initial_prompt=None):
         """
         Initialize transcriber with Persian language support
         
@@ -136,11 +88,19 @@ class PersianAudioTranscriber:
         normalize_persian (bool): Apply Persian text normalization using hazm
         """
         self.engine = engine
-        self.model_size = model_size
         self.api_key = api_key
         self.language = language
         self.normalize_persian = normalize_persian  # Always allow normalization (uses fallback if hazm unavailable)
         self.model = None
+        
+        # Validate and potentially upgrade model size for the target language
+        self.model_size = self._validate_model_size(model_size, language)
+        
+        # Set initial prompt for better language-specific transcription
+        if initial_prompt is None:
+            self.initial_prompt = PERSIAN_INITIAL_PROMPTS.get(language, PERSIAN_INITIAL_PROMPTS.get("fa", ""))
+        else:
+            self.initial_prompt = initial_prompt
         
         # Initialize Persian normalizer (uses hazm if available, otherwise basic normalizer)
         if self.normalize_persian:
@@ -153,6 +113,34 @@ class PersianAudioTranscriber:
         
         # Initialize engine
         self._initialize_engine()
+    
+    def _validate_model_size(self, requested_size: str, language: str) -> str:
+        """
+        Validate and potentially upgrade model size based on language requirements.
+        
+        Persian, Arabic, Chinese, Japanese, and Korean languages require larger models
+        for acceptable transcription quality. Tiny/base models produce garbage output
+        for these languages.
+        
+        Args:
+            requested_size: The model size requested by the user
+            language: The target language code (e.g., 'fa' for Persian)
+            
+        Returns:
+            The validated (possibly upgraded) model size
+        """
+        minimum_size = MINIMUM_MODEL_SIZES.get(language, MINIMUM_MODEL_SIZES["default"])
+        
+        requested_rank = MODEL_SIZE_RANK.get(requested_size.lower(), 0)
+        minimum_rank = MODEL_SIZE_RANK.get(minimum_size, 0)
+        
+        if requested_rank < minimum_rank:
+            print(f"[WARNING] Model '{requested_size}' is too small for {language} transcription.")
+            print(f"[INFO] Upgrading to '{minimum_size}' model for better accuracy.")
+            print(f"[INFO] For best Persian results, use 'large-v3' model.")
+            return minimum_size
+        
+        return requested_size
     
     def _check_cuda_available(self):
         """Check if CUDA is available for GPU acceleration"""
@@ -170,38 +158,20 @@ class PersianAudioTranscriber:
             print("[INFO] PyTorch not available for CUDA check")
             return False
     
-    def _add_nvidia_dll_paths(self):
-        """Add NVIDIA CUDA DLL paths to environment PATH"""
-        import site
-        current_path = os.environ.get('PATH', '')
-        paths_to_add = []
-        
-        # Priority 1: System CUDA 12.x bin directories (most reliable)
-        cuda_install_base = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA"
-        if os.path.exists(cuda_install_base):
-            # Check for CUDA 12.x versions (12.0, 12.1, 12.2, 12.3, 12.4, 12.5, etc.)
-            for version in ['12.5', '12.4', '12.3', '12.2', '12.1', '12.0', 'v12.5', 'v12.4', 'v12.3', 'v12.2', 'v12.1', 'v12.0']:
-                cuda_bin = os.path.join(cuda_install_base, f'v{version}' if not version.startswith('v') else version, 'bin')
-                if os.path.exists(cuda_bin) and os.path.exists(os.path.join(cuda_bin, 'cublas64_12.dll')):
-                    if cuda_bin not in current_path:
-                        paths_to_add.insert(0, cuda_bin)  # Add at beginning (highest priority)
-                        print(f"[INFO] Found system CUDA 12 DLLs: {cuda_bin}")
-                    break  # Use first found CUDA 12 version
-        
-        # Priority 2: Python package NVIDIA DLLs (installed via pip)
-        site_packages = site.getsitepackages()[0] if site.getsitepackages() else os.path.join(sys.prefix, 'Lib', 'site-packages')
-        cublas_bin = os.path.join(site_packages, 'nvidia', 'cublas', 'bin')
-        cudnn_bin = os.path.join(site_packages, 'nvidia', 'cudnn', 'bin')
-        
-        if os.path.exists(cublas_bin) and cublas_bin not in current_path:
-            paths_to_add.append(cublas_bin)
-        if os.path.exists(cudnn_bin) and cudnn_bin not in current_path:
-            paths_to_add.append(cudnn_bin)
-        
-        # Add all paths to the beginning of PATH (so they're found first)
-        if paths_to_add:
-            new_paths = os.pathsep.join(paths_to_add)
-            os.environ['PATH'] = new_paths + os.pathsep + current_path
+    def _add_nvidia_dll_paths(self) -> bool:
+        """Ensure CUDA runtime libraries are visible to the current process."""
+
+        try:
+            configured = setup_cuda_dll_paths()
+        except (RuntimeError, ValueError) as exc:
+            print(f"[WARNING] CUDA library path configuration failed: {exc}")
+            return False
+
+        if configured:
+            print("[INFO] CUDA library paths configured.")
+        else:
+            print("[INFO] No CUDA library paths configured; continuing with CPU fallback.")
+        return configured
     
     def _initialize_engine(self):
         """Initialize the selected transcription engine"""
@@ -291,6 +261,96 @@ class PersianAudioTranscriber:
                 print("[OK] OpenAI API client initialized for Persian")
             except ImportError:
                 raise ImportError("OpenAI not installed. Run: pip install openai")
+    
+    def _remove_repetitions(self, text: str, min_repeat_len: int = 5, max_repeats: int = 2) -> str:
+        """
+        Post-process text to remove excessive repetitions (hallucinations).
+        
+        This handles cases where Whisper gets stuck in a loop repeating phrases.
+        
+        Args:
+            text: The transcribed text
+            min_repeat_len: Minimum length of phrase to check for repetition
+            max_repeats: Maximum allowed repetitions before removal
+            
+        Returns:
+            Text with excessive repetitions removed
+        """
+        import re
+        
+        if not text or len(text) < min_repeat_len * 2:
+            return text
+        
+        # Split into words
+        words = text.split()
+        if len(words) < 3:
+            return text
+        
+        # Method 1: Remove consecutive duplicate phrases
+        # Look for patterns like "word word word word word word" (same word repeated)
+        cleaned_words = []
+        i = 0
+        while i < len(words):
+            word = words[i]
+            # Count consecutive repeats
+            repeat_count = 1
+            while i + repeat_count < len(words) and words[i + repeat_count] == word:
+                repeat_count += 1
+            
+            # Keep only up to max_repeats
+            for _ in range(min(repeat_count, max_repeats)):
+                cleaned_words.append(word)
+            i += repeat_count
+        
+        # Method 2: Remove repeated multi-word phrases
+        text = ' '.join(cleaned_words)
+        
+        # Pattern to find repeated phrases (3+ words repeated 3+ times)
+        # This regex finds phrases that are repeated consecutively
+        for phrase_len in range(8, 2, -1):  # Check longer phrases first
+            pattern = r'((?:\S+\s+){' + str(phrase_len - 1) + r'}\S+)\s+(\1\s*){2,}'
+            text = re.sub(pattern, r'\1 ', text)
+        
+        # Clean up extra spaces
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+    
+    def _format_persian_text(self, text: str) -> str:
+        """
+        Format Persian text with proper punctuation and spacing.
+        
+        Args:
+            text: Raw transcribed text
+            
+        Returns:
+            Formatted text with proper Persian punctuation
+        """
+        import re
+        
+        if not text:
+            return text
+        
+        # Persian punctuation marks
+        # Add space after punctuation if missing
+        text = re.sub(r'([،؟!:.])([^\s])', r'\1 \2', text)
+        
+        # Fix spacing around Persian-specific punctuation
+        text = re.sub(r'\s+([،؟!:.])', r'\1', text)  # No space before punctuation
+        
+        # Add proper sentence breaks for readability
+        # Split on Persian question mark and exclamation
+        text = re.sub(r'([؟!.])\s*', r'\1\n', text)
+        
+        # Clean up multiple newlines
+        text = re.sub(r'\n\s*\n', '\n', text)
+        text = re.sub(r'\n+', '\n', text)
+        
+        # Remove leading/trailing whitespace from lines
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        text = '\n'.join(lines)
+        
+        return text
     
     def _normalize_persian_text(self, text: str) -> str:
         """
@@ -410,14 +470,34 @@ class PersianAudioTranscriber:
                 # Convert path to absolute path to avoid any path issues
                 absolute_audio_path = str(Path(audio_path).resolve())
                 
+                # Transcription parameters optimized for Persian/Farsi
+                # with anti-hallucination and anti-repetition settings
+                transcribe_params = {
+                    "language": target_language,
+                    "task": "transcribe",
+                    "beam_size": 5,
+                    "best_of": 5,
+                    "patience": 1.0,
+                    "temperature": 0.0,  # Greedy decoding for consistency
+                    "vad_filter": True,  # Voice Activity Detection
+                    "vad_parameters": {"min_silence_duration_ms": 500},
+                    "condition_on_previous_text": True,  # Better context continuity
+                    "initial_prompt": self.initial_prompt,  # Critical for Persian!
+                    "compression_ratio_threshold": 2.4,
+                    "log_prob_threshold": -1.0,
+                    "no_speech_threshold": 0.6,
+                    # Anti-repetition settings
+                    "repetition_penalty": 1.1,  # Penalize repeated tokens (>1 to penalize)
+                    "no_repeat_ngram_size": 3,  # Prevent 3-gram repetitions
+                    # Hallucination detection
+                    "word_timestamps": True,  # Required for hallucination detection
+                    "hallucination_silence_threshold": 2.0,  # Skip silent periods >2s during hallucinations
+                }
+                
                 try:
                     segments, info = self.model.transcribe(
                         absolute_audio_path,
-                        language=target_language,
-                        task="transcribe",
-                        beam_size=5,
-                        vad_filter=True,  # Voice Activity Detection
-                        vad_parameters=dict(min_silence_duration_ms=500)
+                        **transcribe_params
                     )
                 except Exception as e:
                     # Check if it's a cuDNN/CUDA error
@@ -432,11 +512,7 @@ class PersianAudioTranscriber:
                         # Retry transcription with CPU
                         segments, info = self.model.transcribe(
                             absolute_audio_path,
-                            language=target_language,
-                            task="transcribe",
-                            beam_size=5,
-                            vad_filter=True,
-                            vad_parameters=dict(min_silence_duration_ms=500)
+                            **transcribe_params
                         )
                     else:
                         # Re-raise if it's a different error
@@ -447,16 +523,25 @@ class PersianAudioTranscriber:
                 full_text = []
                 
                 for segment in segments:
+                    # Normalize and clean the segment text
+                    normalized_text = self._normalize_persian_text(segment.text)
+                    cleaned_text = self._remove_repetitions(normalized_text)
+                    
                     segment_dict = {
                         "start": segment.start,
                         "end": segment.end,
-                        "text": self._normalize_persian_text(segment.text)
+                        "text": cleaned_text
                     }
                     all_segments.append(segment_dict)
-                    full_text.append(segment_dict["text"])
+                    full_text.append(cleaned_text)
+                
+                # Join and post-process full text
+                combined_text = " ".join(full_text)
+                combined_text = self._remove_repetitions(combined_text)
+                combined_text = self._format_persian_text(combined_text)
                 
                 return {
-                    "text": " ".join(full_text),
+                    "text": combined_text,
                     "language": info.language,
                     "segments": all_segments,
                     "duration": info.duration
@@ -666,9 +751,9 @@ Examples:
     
     parser.add_argument("input", help="Audio file or folder path")
     parser.add_argument("--engine", choices=["whisper", "faster_whisper", "google", "openai_api"], 
-                       default="whisper", help="Transcription engine (default: whisper)")
-    parser.add_argument("--model", default="medium", 
-                       help="Model size for Whisper: tiny/base/small/medium/large/large-v3 (default: medium for Persian)")
+                       default="faster_whisper", help="Transcription engine (default: faster_whisper for GPU acceleration)")
+    parser.add_argument("--model", default="large-v3", 
+                       help="Model size: tiny/base/small/medium/large-v3 (default: large-v3 for best Persian accuracy)")
     parser.add_argument("--output", help="Output directory")
     parser.add_argument("--format", choices=["txt", "json", "srt"], 
                        default="txt", help="Output format (default: txt)")
@@ -677,8 +762,15 @@ Examples:
                        help="Disable Persian text normalization")
     parser.add_argument("--language", default="fa", 
                        help="Language code (default: fa for Persian/Farsi)")
+    parser.add_argument("--initial-prompt", 
+                       help="Initial prompt to guide transcription style (helps distinguish Persian from Arabic)")
     
     args = parser.parse_args()
+    
+    # Show model recommendation for Persian
+    if args.language == "fa" and args.model in ["tiny", "base"]:
+        print(f"\n[IMPORTANT] For Persian transcription, '{args.model}' model produces poor results.")
+        print("[IMPORTANT] Use 'medium', 'large-v2', or 'large-v3' for accurate Persian transcription.\n")
     
     # Create transcriber
     transcriber = PersianAudioTranscriber(
@@ -686,7 +778,8 @@ Examples:
         model_size=args.model,
         api_key=args.api_key or os.getenv("OPENAI_API_KEY"),
         language=args.language,
-        normalize_persian=not args.no_normalize
+        normalize_persian=not args.no_normalize,
+        initial_prompt=args.initial_prompt
     )
     
     # Check if input is file or folder

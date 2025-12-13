@@ -1,35 +1,36 @@
-# Voice-Transcriber
+# Voice Transcriber
 
-A powerful, GPU-accelerated audio and video transcription tool with native Persian/Farsi language support, featuring advanced text normalization and multiple transcription engines.
+A fully-featured, GPU-accelerated voice transcription toolkit with Persian/Farsi language support, parallel batch processing, and multiple transcription engines.
 
 ## 🎯 Features
 
 ### Core Functionality
-- **Persian/Farsi Language Support** - Native support with Hazm text normalization
-- **GPU Acceleration** - CUDA/FP16 support for RTX GPUs (5-10x faster)
-- **Multiple Engines** - Whisper, Faster-Whisper, OpenAI API, Google Speech Recognition
-- **Batch Processing** - Process entire folders of audio/video files
-- **Multiple Formats** - TXT, JSON, SRT subtitle generation
+- **Multiple Transcription Engines** - OpenAI Whisper API, Offline Wav2Vec2, Faster-Whisper
+- **GPU Acceleration** - CUDA support for RTX GPUs with automatic CPU fallback
+- **Parallel Batch Processing** - Multi-threaded transcription with progress bars
+- **Persian/Farsi Support** - Native normalization with Arabic→Persian character mapping
+- **CSV Output** - Structured batch results with success/failure tracking
+- **Rate Limiting & Retry Logic** - Robust API calls with exponential backoff
 
 ### Supported Audio/Video Formats
 - MP3, MP4, WAV, M4A, FLAC, OGG, AAC, WMA
-- Automatic audio extraction from video files (MP4)
+- Automatic audio extraction from video files
 
 ### Advanced Features
-- **Text Normalization** - Arabic to Persian character conversion, whitespace normalization
-- **Subtitle Generation** - SRT format with precise timestamps
-- **Detailed Metadata** - JSON output with segments, timestamps, language detection
-- **Error Handling** - Automatic CPU fallback if GPU unavailable
-- **Windows Optimized** - Automatic CUDA DLL path detection
+- **Modular Architecture** - Abstract engine base for easy extension
+- **Configuration Management** - YAML-based settings with environment variables
+- **Command-Line Interface** - argparse-based CLI with multiple subcommands
+- **Comprehensive Logging** - Colorized logs with configurable levels
+- **Error Handling** - Graceful degradation with detailed error messages
 
 ## 📋 Table of Contents
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
-- [Requirements](#requirements)
-- [Features Detail](#features-detail)
-- [Troubleshooting](#troubleshooting)
+- [Architecture](#architecture)
+- [Development](#development)
+- [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -37,52 +38,55 @@ A powerful, GPU-accelerated audio and video transcription tool with native Persi
 
 ### Prerequisites
 
-- **Python**: 3.8+ (3.11 recommended for full Hazm support)
-- **CUDA Toolkit**: 12.0+ (for GPU acceleration, optional)
-- **cuDNN**: For GPU acceleration (optional, auto-installed via pip)
+- **Python**: 3.8+ (3.13 tested)
 - **FFmpeg**: For audio/video processing
+- **CUDA Toolkit**: 12.0+ (optional, for GPU acceleration)
+- **Virtual Environment**: Recommended for dependency isolation
 
 ### Step-by-Step Setup
 
-#### 1. Clone or Download the Repository
+#### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd Voice-transcription-tool
+git clone https://github.com/DarkOracle10/Voice-Transcriber.git
+cd Voice-Transcriber
 ```
 
-#### 2. Create Virtual Environment (Recommended)
+#### 2. Create Virtual Environment
 
 ```bash
 python -m venv venv
 
-# Windows
-venv\Scripts\activate
+# Windows (PowerShell)
+.\venv\Scripts\Activate.ps1
 
 # Linux/Mac
 source venv/bin/activate
 ```
 
-#### 3. Install Dependencies
+#### 3. Install Package
 
 ```bash
-pip install -r requirements.txt
+# Install from source
+pip install -e .
+
+# Or install with all dependencies
+pip install -e ".[all]"
+
+# Or install specific extras
+pip install -e ".[gpu,persian,dev]"
 ```
 
 #### 4. Install FFmpeg
 
-**Windows:**
-```bash
-# Using winget (Windows 10/11)
+**Windows (PowerShell):**
+```powershell
 winget install Gyan.FFmpeg
-
-# Or download from: https://ffmpeg.org/download.html
 ```
 
 **Linux:**
 ```bash
-sudo apt-get update
-sudo apt-get install ffmpeg
+sudo apt update && sudo apt install ffmpeg
 ```
 
 **Mac:**
@@ -90,276 +94,259 @@ sudo apt-get install ffmpeg
 brew install ffmpeg
 ```
 
-#### 5. Install CUDA Libraries (For GPU Acceleration)
+#### 5. Configure Environment
 
-**Option A: Automatic (Recommended)**
+Copy the example configuration:
 ```bash
-pip install nvidia-cudnn-cu12 nvidia-cublas-cu12
+cp examples/example_config.yaml config.yaml
 ```
 
-**Option B: Manual CUDA Installation**
-- Download CUDA 12.x from: https://developer.nvidia.com/cuda-downloads
-- Download cuDNN from: https://developer.nvidia.com/cudnn
-- Follow installation instructions
+Set environment variables (for OpenAI API):
+```powershell
+# Windows PowerShell
+$env:OPENAI_API_KEY = "sk-proj-..."
+
+# Linux/Mac
+export OPENAI_API_KEY="sk-proj-..."
+```
 
 ## 🎬 Quick Start
 
 ### Basic Transcription
 
 ```bash
-# Transcribe a single audio file
-python main.py audio.mp3
+# Transcribe a single file
+voice-transcriber audio.mp3
 
-# Transcribe a video file (MP4)
-python main.py video.mp4
+# Transcribe with GPU and large model
+voice-transcriber audio.mp3 -m large-v3 -d cuda
 
-# Use GPU acceleration (recommended)
-python main.py audio.mp3 --engine faster_whisper --model medium
+# Transcribe with OpenAI API
+voice-transcriber audio.mp3 -e openai_api --api-key sk-...
+
+# Generate SRT subtitles
+voice-transcriber video.mp4 -f srt
+
+# Batch process directory recursively
+voice-transcriber ./recordings/ -r --output-dir ./transcriptions
 ```
 
-### Output
+### Using Python API
 
-- **Console**: Displays transcribed text in real-time
-- **File**: Automatically saves to `audio.txt` (same location as input)
+```python
+from persian_transcriber import PersianAudioTranscriber
+
+# Initialize transcriber with Faster-Whisper (default)
+transcriber = PersianAudioTranscriber(model_size="medium", device="cuda")
+
+# Transcribe a single file
+result = transcriber.transcribe_file("audio.mp3")
+print(result["text"])
+
+# Batch process a directory
+results = transcriber.scan_and_transcribe(
+    folder_path="./recordings",
+    output_dir="./transcriptions",
+    save_format="txt"
+)
+```
 
 ## 📖 Usage
 
 ### Command-Line Interface
 
 ```bash
-python main.py <input_file_or_folder> [OPTIONS]
+voice-transcriber <input_path> [OPTIONS]
 ```
 
-### Options
+**Engine Options:**
+- `-e, --engine`: Engine type (`faster_whisper`, `whisper`, `openai_api`, `google`)
+- `-m, --model`: Model size (`tiny`, `base`, `small`, `medium`, `large-v3`)
+- `-d, --device`: Compute device (`auto`, `cuda`, `cpu`, `mps`)
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--engine` | Transcription engine: `whisper`, `faster_whisper`, `google`, `openai_api` | `whisper` |
-| `--model` | Model size: `tiny`, `base`, `small`, `medium`, `large`, `large-v3` | `medium` |
-| `--format` | Output format: `txt`, `json`, `srt` | `txt` |
-| `--output` | Output directory | Same as input |
-| `--language` | Language code (default: `fa` for Persian) | `fa` |
-| `--no-normalize` | Disable Persian text normalization | `False` |
-| `--api-key` | OpenAI API key (for `openai_api` engine) | - |
+**Output Options:**
+- `-f, --format`: Output format (`txt`, `json`, `srt`, `vtt`)
+- `-o, --output`: Output file path
+- `--output-dir`: Output directory for batch processing
 
-### Examples
+**Batch Processing:**
+- `-r, --recursive`: Search directories recursively
+- `--skip-existing`: Skip files with existing transcriptions
 
-#### Single File Transcription
+**Examples:**
 
 ```bash
-# Basic transcription
-python main.py recording.mp3
+# High-quality transcription with GPU
+voice-transcriber audio.mp3 -e faster_whisper -m large-v3 -d cuda
 
-# High-quality with GPU
-python main.py recording.mp3 --engine faster_whisper --model large
+# Batch process with JSON output
+voice-transcriber ./audio_folder -r -f json --output-dir ./results
 
-# Generate subtitles
-python main.py video.mp4 --format srt
-
-# JSON output with timestamps
-python main.py audio.mp3 --format json
+# OpenAI API transcription
+voice-transcriber audio.mp3 -e openai_api --api-key $OPENAI_API_KEY
 ```
 
-#### Batch Processing
+### Configuration
+
+The tool can be configured via command-line arguments. For Persian text normalization, use the `--no-normalize` flag to disable it:
 
 ```bash
-# Process all audio files in a folder
-python main.py ./audio_folder --output ./transcriptions
+# Disable Persian normalization
+voice-transcriber audio.mp3 --no-normalize
 
-# Batch with JSON output
-python main.py ./audio_folder --format json --output ./results
+# Enable verbose logging
+voice-transcriber audio.mp3 -v
+
+# Quiet mode (errors only)
+voice-transcriber audio.mp3 -q
 ```
 
-#### GPU-Accelerated Transcription
+### Environment Variables
+
+Set API keys via environment variables:
 
 ```bash
-# Use Faster-Whisper with GPU (recommended)
-python main.py audio.mp3 --engine faster_whisper --model medium
+# Linux/Mac
+export OPENAI_API_KEY="sk-..."
 
-# Large model for best accuracy
-python main.py audio.mp3 --engine faster_whisper --model large-v3
+# Windows PowerShell
+$env:OPENAI_API_KEY = "sk-..."
 ```
 
-#### Custom Output Location
+## 🏗️ Architecture
+
+The toolkit follows a modular architecture with clear separation of concerns:
+
+```
+src/
+├── engines/              # Transcription engine implementations
+│   ├── base.py          # Abstract TranscriptionEngine interface
+│   ├── openai_api_engine.py  # OpenAI Whisper API with rate limiting
+│   ├── offline.py       # Offline Wav2Vec2 engine
+│   └── faster_whisper_engine.py  # Faster-Whisper integration
+├── normalizers/         # Text normalization
+│   ├── base.py         # Abstract normalizer interface
+│   ├── basic.py        # Basic whitespace normalization
+│   └── persian.py      # Persian-specific normalization
+├── output/             # Output formatters
+│   ├── base.py        # Abstract formatter interface
+│   ├── txt_formatter.py
+│   ├── json_formatter.py
+│   └── srt_formatter.py
+├── utils/             # Utility modules
+│   ├── audio.py       # Audio processing helpers
+│   ├── cuda_setup.py  # CUDA configuration
+│   ├── exceptions.py  # Custom exceptions
+│   └── logging.py     # Logging setup
+├── transcriber.py     # TranscriptionManager (batch orchestration)
+├── cli.py            # Command-line interface
+└── __main__.py       # Module entry point
+```
+
+See `docs/ARCHITECTURE.md` for detailed architecture documentation.
+
+## 🧪 Testing
+
+Run tests with pytest:
 
 ```bash
-python main.py audio.mp3 --output ./transcription_results --format json
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/test_offline_engine.py
+
+# Run with verbose output
+pytest -v
 ```
 
-### Python API Usage
+### Test Structure
 
-```python
-from main import PersianAudioTranscriber
-
-# Initialize transcriber
-transcriber = PersianAudioTranscriber(
-    engine="faster_whisper",
-    model_size="medium",
-    language="fa",
-    normalize_persian=True
-)
-
-# Transcribe a single file
-result = transcriber.transcribe_file("audio.mp3")
-print(result['text'])
-
-# Batch process folder
-results = transcriber.scan_and_transcribe(
-    folder_path="./audio_folder",
-    output_dir="./output",
-    save_format="txt"
-)
+```
+tests/
+├── conftest.py                # Shared fixtures
+├── test_engines.py           # Engine unit tests
+├── test_normalizer.py        # Normalizer tests
+├── test_batch_processing.py  # Integration tests
+└── fixtures/                 # Test data
 ```
 
-## 🔧 Requirements
+## 🛠️ Development
 
-### System Requirements
+### Setting Up Development Environment
 
-- **OS**: Windows 10/11, Linux, macOS
-- **RAM**: 4GB minimum (8GB+ recommended)
-- **Storage**: 2GB+ for models (one-time download)
-- **GPU**: NVIDIA GPU with CUDA support (optional, but highly recommended)
-
-### Hardware Recommendations
-
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| CPU | Dual-core 2GHz | Quad-core 3GHz+ |
-| RAM | 4GB | 16GB+ |
-| GPU | - | NVIDIA RTX 3060+ |
-| Storage | 2GB free | 10GB+ free |
-
-### Python Dependencies
-
-All dependencies are listed in `requirements.txt`. Key packages:
-
-- `openai-whisper` - OpenAI Whisper transcription
-- `faster-whisper` - Optimized Whisper implementation
-- `hazm` - Persian text normalization
-- `pydub` - Audio processing
-- `torch` - Deep learning framework
-- `nvidia-cudnn-cu12` - CUDA Deep Neural Network library
-
-## ✨ Features Detail
-
-### Persian Language Support
-
-- **Hazm Integration**: Automatic Persian text normalization
-- **Character Conversion**: Arabic to Persian character mapping
-- **Text Cleanup**: Whitespace normalization, formatting
-- **Fallback Normalizer**: Basic normalization when Hazm unavailable
-
-### GPU Acceleration
-
-- **Automatic Detection**: Detects CUDA and GPU availability
-- **FP16 Precision**: 2x faster with minimal accuracy loss
-- **CPU Fallback**: Automatically falls back to CPU if GPU unavailable
-- **Multi-GPU Support**: Utilizes available GPUs
-
-### Multiple Output Formats
-
-1. **TXT**: Plain text transcription
-2. **JSON**: Detailed metadata with segments and timestamps
-3. **SRT**: Subtitle files for video players
-
-### Batch Processing
-
-- Process entire folders
-- Progress tracking
-- Summary reports
-- Error handling per file
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### CUDA DLL Not Found
-
-**Problem**: `Library cublas64_12.dll is not found`
-
-**Solution**:
 ```bash
-pip install nvidia-cudnn-cu12 nvidia-cublas-cu12
+# Install with dev dependencies
+pip install -e ".[dev]"
+
+# Install pre-commit hooks (optional)
+pre-commit install
 ```
-The code automatically adds DLL paths, but you may need to restart your terminal.
 
-#### FFmpeg Not Found
+### Code Quality Tools
 
-**Problem**: `ffmpeg is not recognized`
+```bash
+# Format code with Black
+black src/ tests/
 
-**Solution**:
-- Install FFmpeg (see Installation section)
-- Add FFmpeg to system PATH
-- Restart terminal after installation
+# Lint with Ruff
+ruff check src/ tests/
 
-#### Model Download Slow
+# Type check with Mypy
+mypy src/
 
-**Problem**: First run downloads large model files
+# Run all checks
+black src/ tests/ && ruff check src/ tests/ && mypy src/ && pytest
+```
 
-**Solution**: This is normal. Models are cached after first download:
-- `tiny`: ~75 MB
-- `base`: ~140 MB
-- `small`: ~460 MB
-- `medium`: ~1.4 GB (recommended for Persian)
-- `large-v3`: ~3+ GB
+### Adding a New Engine
 
-#### GPU Not Used
-
-**Problem**: Transcription uses CPU despite GPU available
-
-**Solutions**:
-1. Verify CUDA installation: `nvidia-smi`
-2. Install CUDA libraries: `pip install nvidia-cudnn-cu12`
-3. Use faster_whisper engine: `--engine faster_whisper`
-4. Check GPU driver is up to date
-
-### Performance Tips
-
-- Use `faster_whisper` engine for best performance
-- Use `medium` or `large` models for Persian (better accuracy)
-- Enable GPU acceleration for 5-10x speedup
-- Use `base` or `small` models for faster transcription (less accurate)
-
-## 📊 Performance Benchmarks
-
-Typical transcription speeds on RTX 3060:
-
-| Model | CPU | GPU (FP16) |
-|-------|-----|------------|
-| tiny | ~2x real-time | ~10x real-time |
-| base | ~1x real-time | ~8x real-time |
-| small | ~0.5x real-time | ~6x real-time |
-| medium | ~0.3x real-time | ~4x real-time |
-
-*Real-time = 1x means 1 minute audio takes 1 minute to transcribe*
+See `docs/CONTRIBUTING.md` for step-by-step guide on adding new transcription engines.
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to this project.
+Contributions are welcome! Please see `docs/CONTRIBUTING.md` for guidelines.
 
-## 📝 License
+### Development Workflow
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make changes and add tests
+4. Run quality checks: `black`, `ruff`, `mypy`, `pytest`
+5. Commit with clear messages: `git commit -m "feat: add new engine"`
+6. Push and create Pull Request
 
-## 👤 Author
+### Code Standards
 
-Created for academic and professional portfolio demonstration.
+- **Formatting**: Black (line length 100)
+- **Linting**: Ruff with strict rules
+- **Type Hints**: Full type annotations
+- **Testing**: >80% coverage required
+- **Documentation**: Docstrings for all public APIs
+
+## 📄 License
+
+This project is licensed under the MIT License - see the `LICENSE` file for details.
 
 ## 🙏 Acknowledgments
 
-- OpenAI for Whisper model
-- Faster-Whisper team for optimized implementation
-- Hazm team for Persian NLP tools
-- CTranslate2 for efficient inference
+- [OpenAI Whisper](https://github.com/openai/whisper) - State-of-the-art speech recognition
+- [Faster-Whisper](https://github.com/guillaumekln/faster-whisper) - Optimized Whisper implementation
+- [Hazm](https://github.com/roshan-research/hazm) - Persian NLP toolkit
+- [facebook/wav2vec2](https://huggingface.co/facebook/wav2vec2-large-xlsr-53-persian) - Offline Persian ASR
 
-## 📚 Additional Resources
+## 📞 Support
 
-- [User Guide](docs/USER_GUIDE.md)
-- [API Documentation](docs/API.md)
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
-- [Performance Benchmarks](docs/BENCHMARKS.md)
+- **Issues**: [GitHub Issues](https://github.com/DarkOracle10/Voice-Transcriber/issues)
+- **Documentation**: See `docs/` directory
+- **Troubleshooting**: `docs/TROUBLESHOOTING.md`
 
 ---
 
-**Note**: For best results with Persian/Farsi audio, use `medium` or larger models with GPU acceleration.
+**Author**: DarkOracle10  
+**Email**: darkoracle3860@gmail.com  
+**Version**: 1.0.0
 

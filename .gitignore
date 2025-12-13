@@ -55,15 +55,15 @@ models/
 *.avi
 *.mov
 
-# Transcription outputs (optional - uncomment if you don't want to track outputs)
-# *.txt
-# *.json
-# *.srt
+# Transcription outputs
+*.csv
+results/
+output/
 
-# Test files
-test_*.py
-*_test.py
-*.test
+# Secrets and configuration with sensitive data
+.env
+.env.local
+config.yaml
 
 # Logs
 *.log
@@ -93,6 +93,10 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
+# ruff
+.ruff_cache/
+
 # Documentation builds
 docs/_build/
+site/
 

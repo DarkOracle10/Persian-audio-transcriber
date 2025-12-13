@@ -1,48 +1,36 @@
-"""
-Setup script for persian-transcriber package.
+"""Setup script for Voice Transcription Toolkit."""
 
-This file exists for backwards compatibility with older pip versions
-and for editable installs. The main configuration is in pyproject.toml.
-"""
-
-from setuptools import setup, find_packages
 from pathlib import Path
+from setuptools import setup, find_packages
 
-# Read README for long description
-this_directory = Path(__file__).parent
-long_description = ""
-readme_path = this_directory / "README.md"
-if readme_path.exists():
-    long_description = readme_path.read_text(encoding="utf-8")
+# Read version from persian_transcriber package
+version_file = Path(__file__).parent / "src" / "persian_transcriber" / "__init__.py"
+version = "1.0.0"
+for line in version_file.read_text(encoding="utf-8").splitlines():
+    if line.startswith("__version__"):
+        version = line.split("=")[1].strip().strip('"').strip("'")
+        break
 
-# Read version from package
-version = "2.0.0"
-try:
-    version_file = this_directory / "src" / "persian_transcriber" / "__init__.py"
-    if version_file.exists():
-        for line in version_file.read_text(encoding="utf-8").splitlines():
-            if line.startswith("__version__"):
-                version = line.split("=")[1].strip().strip('"').strip("'")
-                break
-except Exception:
-    pass
+# Read long description from README
+readme_file = Path(__file__).parent / "README.md"
+long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists() else ""
 
 setup(
-    name="persian-transcriber",
+    name="voice-transcriber",
     version=version,
-    author="Dark Oracle",
+    author="DarkOracle10",
     author_email="darkoracle3860@gmail.com",
-    description="GPU-accelerated audio/video transcription tool with Persian/Farsi language support",
+    description="GPU-accelerated voice transcription toolkit with Persian/Farsi language support",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/darkoracle/persian-transcriber",
+    url="https://github.com/DarkOracle10/Voice-Transcriber",
     project_urls={
-        "Documentation": "https://github.com/darkoracle/persian-transcriber#readme",
-        "Bug Tracker": "https://github.com/darkoracle/persian-transcriber/issues",
-        "Changelog": "https://github.com/darkoracle/persian-transcriber/blob/main/CHANGELOG.md",
+        "Bug Tracker": "https://github.com/DarkOracle10/Voice-Transcriber/issues",
+        "Documentation": "https://github.com/DarkOracle10/Voice-Transcriber#readme",
+        "Source Code": "https://github.com/DarkOracle10/Voice-Transcriber",
     },
-    package_dir={"": "src"},
     packages=find_packages(where="src"),
+    package_dir={"": "src"},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -62,38 +50,62 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "openai-whisper>=20231117",
-        "faster-whisper>=1.0.0",
+        "pyyaml>=6.0.2",
+        "python-dotenv>=1.1.0",
+        "httpx>=0.28.1",
+        "certifi>=2025.10.5",
+        "click>=8.3.0",
+        "colorama>=0.4.6",
+        "faster-whisper>=1.2.1",
+        "ctranslate2>=4.6.1",
+        "openai>=1.86.0",
+        "ffmpeg-python>=0.1.17",
         "pydub>=0.25.1",
-        "numpy>=1.24.0",
+        "av>=16.0.1",
+        "coloredlogs>=15.0.1",
+        "tqdm>=4.67.1",
+        "typing-extensions>=4.14.0",
     ],
     extras_require={
         "persian": ["hazm>=0.10.0"],
         "gpu": [
             "torch>=2.0.0",
-            "nvidia-cudnn-cu12>=9.0.0",
-            "nvidia-cublas-cu12>=12.0.0",
+            "torchaudio>=2.0.0",
         ],
-        "openai": ["openai>=1.0.0"],
-        "google": ["SpeechRecognition>=3.10.0"],
         "dev": [
-            "pytest>=7.0.0",
-            "pytest-cov>=4.0.0",
-            "mypy>=1.0.0",
-            "ruff>=0.1.0",
-            "black>=23.0.0",
+            "pytest>=8.3.5",
+            "pytest-cov>=6.1.1",
+            "pytest-asyncio>=1.0.0",
+            "pytest-mock>=3.14.0",
+            "ruff>=0.11.12",
+            "black>=25.1.0",
+            "mypy>=1.16.0",
+            "types-pyyaml>=6.0.12",
+        ],
+        "docs": [
+            "mkdocs>=1.6.1",
+            "mkdocs-material>=9.5",
+            "mkdocstrings>=0.29.1",
         ],
     },
     entry_points={
         "console_scripts": [
-            "persian-transcribe=persian_transcriber.cli:main",
-            "ptranscribe=persian_transcriber.cli:main",
+            "voice-transcriber=persian_transcriber.cli:main",
+            "vtranscribe=persian_transcriber.cli:main",
         ],
     },
+    keywords=[
+        "transcription",
+        "speech-to-text",
+        "persian",
+        "farsi",
+        "whisper",
+        "audio",
+        "video",
+        "gpu",
+        "cuda",
+        "nlp",
+    ],
     include_package_data=True,
-    package_data={
-        "persian_transcriber": ["py.typed"],
-    },
     zip_safe=False,
 )
-

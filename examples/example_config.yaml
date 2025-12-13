@@ -1,0 +1,150 @@
+# =============================================================================
+# Voice Transcription Toolkit - Configuration File
+# =============================================================================
+# This file configures various aspects of the transcription toolkit.
+# Place this file in one of these locations (checked in order):
+#   1. Path specified via --config CLI argument
+#   2. PERSIAN_TRANSCRIBER_CONFIG environment variable
+#   3. Current working directory (config.yaml or config.yml)
+#   4. Repository root directory
+#   5. ~/.persian_transcriber/config.yaml (user home directory)
+#
+# Security Note: Never commit this file with real API keys to version control!
+# Add config.yaml to .gitignore.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# OpenAI API Configuration
+# -----------------------------------------------------------------------------
+openai:
+  # Your OpenAI API key (or use OPENAI_API_KEY environment variable)
+  # Get your key from: https://platform.openai.com/account/api-keys
+  api_key: null  # Replace with: sk-proj-YOUR_API_KEY_HERE
+
+  # Optional: Organization ID (if you have multiple organizations)
+  # organization: org-YOUR_ORG_ID
+
+# -----------------------------------------------------------------------------
+# Offline Engine Configuration
+# -----------------------------------------------------------------------------
+offline:
+  # Device selection for offline transcription
+  # Options:
+  #   - "cuda": Force NVIDIA GPU acceleration (requires CUDA)
+  #   - "cpu": Force CPU processing
+  #   - null: Auto-detect (uses CUDA if available, else CPU)
+  device: null  # Auto-detect recommended
+
+  # Optional: Model bundle to use (torchaudio)
+  # model_bundle: "WAV2VEC2_ASR_BASE_960H"
+
+# -----------------------------------------------------------------------------
+# CUDA Configuration (Optional)
+# -----------------------------------------------------------------------------
+# Only needed if CUDA is installed in a non-standard location
+# or if automatic detection fails
+cuda:
+  # CUDA installation directory
+  # Windows example: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.4
+  # Linux example: /usr/local/cuda
+  # macOS example: /usr/local/cuda
+  cuda_home_path: null  # Replace with your CUDA path if needed
+
+  # Platform-specific library paths
+  library_paths:
+    # Windows: Path to CUDA bin directory (DLL files)
+    windows:
+      # - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4\\bin"
+      # - "C:\\Program Files\\NVIDIA\\CUDNN\\v8.9\\bin"
+
+    # Linux: Path to CUDA lib64 or lib directory (shared libraries)
+    linux:
+      # - /usr/local/cuda/lib64
+      # - /usr/local/cuda/lib
+
+    # macOS: Path to CUDA lib directory (dylib files)
+    darwin:
+      # - /usr/local/cuda/lib
+
+# -----------------------------------------------------------------------------
+# Transcription Manager Configuration
+# -----------------------------------------------------------------------------
+transcription:
+  # Maximum number of parallel transcription workers
+  # Recommendations:
+  #   - OpenAI API: 2-3 (to avoid rate limits)
+  #   - Offline CPU: Equal to CPU cores
+  #   - Offline GPU: 4-8 (depends on VRAM)
+  max_workers: 4
+
+  # Number of results to buffer before writing to CSV
+  # Higher values = fewer disk writes but more memory usage
+  batch_size: 10
+
+  # Default audio file extensions to process
+  extensions:
+    - .wav
+    - .mp3
+    - .flac
+    - .ogg
+    - .m4a
+
+# -----------------------------------------------------------------------------
+# Persian Text Normalization Configuration
+# -----------------------------------------------------------------------------
+normalization:
+  # Convert Arabic numerals (٠-٩) to Persian (۰-۹)
+  convert_numerals: true
+
+  # Lowercase text during normalization
+  lowercase: false
+
+  # Custom character mappings (optional)
+  # character_map:
+  #   "@": ""  # Remove @ symbols
+  #   "#": ""  # Remove # symbols
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO
+
+  # Log format
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+  # Log to file (optional)
+  # file: transcription.log
+
+# -----------------------------------------------------------------------------
+# Example Configurations for Different Use Cases
+# -----------------------------------------------------------------------------
+
+# Example 1: OpenAI API with rate limiting
+# openai:
+#   api_key: sk-proj-YOUR_KEY
+# transcription:
+#   max_workers: 2  # Avoid rate limits
+
+# Example 2: Offline CUDA acceleration
+# offline:
+#   device: cuda
+# cuda:
+#   cuda_home_path: /usr/local/cuda
+# transcription:
+#   max_workers: 8  # Utilize GPU parallelism
+
+# Example 3: CPU-only processing
+# offline:
+#   device: cpu
+# transcription:
+#   max_workers: 4  # Match CPU core count
+
+# Example 4: Custom CUDA paths (Windows)
+# cuda:
+#   cuda_home_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4"
+#   library_paths:
+#     windows:
+#       - "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.4\\bin"
+#       - "C:\\Program Files\\NVIDIA\\CUDNN\\v8.9\\bin"

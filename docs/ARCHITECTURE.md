@@ -9,12 +9,64 @@
 
 ## Table of Contents
 
-1. [Project Structure](#1-project-structure)
-2. [Module Descriptions](#2-module-descriptions)
-3. [Module Dependencies](#3-module-dependencies)
-4. [Cross-Platform CUDA Detection](#4-cross-platform-cuda-detection)
-5. [Data Flow](#5-data-flow)
-6. [Configuration Management](#6-configuration-management)
+1. [High-Level Architecture](#1-high-level-architecture)
+2. [Project Structure](#2-project-structure)
+3. [Module Descriptions](#3-module-descriptions)
+4. [Module Dependencies](#4-module-dependencies)
+5. [Cross-Platform CUDA Detection](#5-cross-platform-cuda-detection)
+6. [Data Flow](#6-data-flow)
+7. [Configuration Management](#7-configuration-management)
+8. [New CLI and Transcription Manager](#8-new-cli-and-transcription-manager)
+9. [Error Handling Strategy](#9-error-handling-strategy)
+10. [Extension Points](#10-extension-points)
+
+---
+
+## 1. High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CLI Entry Point (cli.py)                     │
+│  • Argument parsing (argparse)                                  │
+│  • Config loading (Config.load())                               │
+│  • Logging configuration                                        │
+│  • Command routing: transcribe | normalize | check-cuda         │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+┌───────▼────────┐           ┌────────▼─────────┐
+│ Transcriber    │           │ Normalizer       │
+│ Manager        │           │ (Persian Text)   │
+│                │           │                  │
+│ • File         │           │ • Arabic→Persian │
+│   discovery    │           │ • Whitespace     │
+│ • Parallel     │           │   normalization  │
+│   processing   │           │ • Numeral conv.  │
+│ • CSV output   │           └──────────────────┘
+│ • Progress bar │
+└───────┬────────┘
+        │
+        │ Uses
+        ▼
+┌────────────────────────────────────────────────┐
+│   TranscriptionEngine (Abstract Base Class)    │
+│   • transcribe(audio_path) → str               │
+│   • transcribe_batch(paths) → List[str]        │
+│   • validate_audio_path(path) → Path           │
+└────────────────┬───────────────────────────────┘
+                 │
+     ┌───────────┴────────────┐
+     │                        │
+┌────▼─────────────────┐  ┌──▼────────────────────────┐
+│ Offline Engine       │  │ OpenAI Engine             │
+│                      │  │                           │
+│ • torchaudio loader  │  │ • API client (openai lib) │
+│ • Wav2Vec2 ASR       │  │ • Rate limiting (3 req/s) │
+│ • Device management  │  │ • Retry logic (3 attempts)│
+│ • CPU/CUDA fallback  │  │ • Exponential backoff     │
+└──────────────────────┘  └───────────────────────────┘
+```
 
 ---
 
@@ -703,26 +755,164 @@ ptranscribe = "persian_transcriber.cli:main"  # Short alias
 
 ---
 
-## 8. Migration Checklist
+## 8. New CLI and Transcription Manager
 
-Converting from single `main.py` to package structure:
+### 8.1 CLI Entry Point (`src/cli.py`)
 
-- [ ] Create directory structure as shown above
-- [ ] Extract `BasicPersianNormalizer` → `normalizers/basic.py`
-- [ ] Extract Persian normalizer logic → `normalizers/persian.py`
-- [ ] Extract `_setup_cuda_dll_paths()` → `utils/cuda_setup.py` (with cross-platform support)
-- [ ] Extract engine initialization → individual engine files
-- [ ] Extract `_format_timestamp()` and SRT logic → `output/srt_formatter.py`
-- [ ] Extract argparse logic → `cli.py`
-- [ ] Create `TranscriptionResult` dataclass in `transcriber.py`
-- [ ] Add `__version__` to `__init__.py`
-- [ ] Update `setup.py` and create `pyproject.toml`
-- [ ] Write unit tests for each module
-- [ ] Update imports throughout codebase
+**Purpose:** Main command-line interface for the refactored toolkit
+
+**Key Features:**
+- Subcommands: `transcribe`, `normalize`, `check-cuda`
+- Config loading with YAML support
+- Logging configuration
+- Engine selection and initialization
+
+**Command Examples:**
+```bash
+# Transcribe audio files
+python -m src transcribe --folder ./audio --output results.csv --engine openai
+
+# Normalize Persian text
+python -m src normalize --text "سلام دنيا"
+
+# Check CUDA availability
+python -m src check-cuda
+```
+
+### 8.2 Transcription Manager (`src/transcriber.py`)
+
+**Purpose:** Orchestrate batch transcription with parallel processing
+
+**Key Features:**
+- File discovery with configurable extensions
+- ThreadPoolExecutor for parallel transcription
+- tqdm progress bars
+- Batched CSV writes for memory efficiency
+- Per-file error handling and recovery
+
+**Data Flow:**
+```
+Input Folder
+    ↓
+find_audio_files() → List[Path]
+    ↓
+ThreadPoolExecutor.submit() × max_workers
+    ↓
+engine.transcribe() for each file
+    ↓
+Collect results with tqdm progress
+    ↓
+Write CSV in batches (batch_size=10)
+    ↓
+Output CSV: file_path, status, transcript, error_msg
+```
+
+### 8.3 New Engines
+
+#### Offline Engine (`src/engines/offline.py`)
+- Uses torchaudio Wav2Vec2 ASR bundle
+- Auto device selection (CUDA if available, else CPU)
+- Audio resampling and mono conversion
+- On-demand model loading
+
+#### OpenAI Engine (`src/engines/openai.py`)
+- Rate limiting: max 3 requests/second
+- Retry logic: 3 attempts with exponential backoff
+- API key validation at initialization
+- Handles RateLimitError, AuthenticationError, APIError
 
 ---
 
-## 9. Appendix: File Templates
+## 9. Error Handling Strategy
+
+### Engine-Level Errors
+
+**Offline Engine:**
+- `FileNotFoundError`: Audio file missing → propagate
+- `RuntimeError`: torch/torchaudio not installed → raise with install hint
+- Model loading failures → log, fallback to CPU if CUDA fails
+
+**OpenAI Engine:**
+- `ValueError`: Missing API key → raise at init
+- `AuthenticationError`: Invalid key → propagate immediately
+- `RateLimitError`: Quota exceeded → retry with backoff (up to 3 attempts)
+- `APIError`: Transient error → retry with backoff
+
+### Manager-Level Errors
+
+**TranscriptionManager:**
+- `FileNotFoundError`: Folder missing → raise immediately
+- Per-file failures → catch, log, store in result dict, continue
+- CSV write failures → raise `OSError`, abort batch
+
+### CLI-Level Errors
+
+**Exit Codes:**
+- `0`: Success
+- `1`: Configuration/engine/transcription error
+- `130`: User interrupt (KeyboardInterrupt)
+
+---
+
+## 10. Extension Points
+
+### Adding a New Engine
+
+1. Create `src/engines/my_engine.py`
+2. Subclass `TranscriptionEngine`
+3. Implement `transcribe(audio_path: str) → str`
+4. Update `src/engines/__init__.py`:
+   ```python
+   from .my_engine import MyEngine
+   __all__.append("MyEngine")
+   ```
+5. Add CLI support in `src/cli.py`
+
+### Adding New Output Formats
+
+Extend `TranscriptionManager`:
+```python
+def _write_json_batch(self, output_path: Path) -> None:
+    with output_path.open("a", encoding="utf-8") as f:
+        for result in self.results:
+            json.dump(result, f)
+            f.write("\n")
+```
+
+### Custom Normalizers
+
+Subclass `BasicPersianNormalizer`:
+```python
+class CustomNormalizer(BasicPersianNormalizer):
+    def normalize(self, text: str) -> str:
+        text = super().normalize(text)
+        # Add custom logic
+        return text
+```
+
+---
+
+## 11. Migration Checklist
+
+Converting from single `main.py` to package structure:
+
+- [x] Create directory structure (`src/engines`, `src/utils`)
+- [x] Extract normalizer logic → `src/utils/normalizer.py`
+- [x] Extract CUDA setup → `src/utils/cuda_setup.py`
+- [x] Create abstract engine base → `src/engines/base.py`
+- [x] Implement offline engine → `src/engines/offline.py`
+- [x] Implement OpenAI engine → `src/engines/openai.py`
+- [x] Create transcription manager → `src/transcriber.py`
+- [x] Create CLI entry point → `src/cli.py`
+- [x] Create `__main__.py` for module execution
+- [x] Write unit tests for engines
+- [x] Update CI workflow with setuptools/wheel
+- [ ] Update documentation (README, USER_GUIDE, API)
+- [ ] Create example configurations
+
+---
+
+## 12. Appendix: File Templates
 
 ### 9.1 Base Engine Template
 

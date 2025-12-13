@@ -44,7 +44,7 @@ Examples:
   # Use OpenAI API
   persian-transcriber audio.mp3 -e openai_api --api-key sk-...
 
-For more information, visit: https://github.com/your-repo/persian-transcriber
+For more information, visit: https://github.com/DarkOracle10/Voice-Transcriber
         """,
     )
     

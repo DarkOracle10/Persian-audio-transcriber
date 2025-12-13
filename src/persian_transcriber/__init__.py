@@ -36,9 +36,9 @@ Output Formats:
 For more information, see the documentation or visit the GitHub repository.
 """
 
-__version__ = "2.0.0"
-__author__ = "Persian Transcriber Contributors"
-__email__ = ""
+__version__ = "1.0.0"
+__author__ = "DarkOracle10"
+__email__ = "darkoracle3860@gmail.com"
 __license__ = "MIT"
 
 # Public API exports
