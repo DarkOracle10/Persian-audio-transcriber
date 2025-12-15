@@ -1,7 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 *.so
 .Python
 build/
@@ -34,40 +34,33 @@ Transcribe/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# Models (cache)
+# Models (large trained model files, but keep directory structure)
 .cache/
 *.pt
 *.pth
 *.bin
-models/
+models/*.pt
+models/*.pth
+models/*.bin
 
-# Audio/Video files (large files)
-*.mp3
-*.mp4
-*.wav
-*.m4a
-*.flac
-*.ogg
-*.aac
-*.wma
-*.avi
-*.mov
+# Audio/Video test files (large files in Test files directory only)
+Test files/*.mp3
+Test files/*.mp4
+Test files/*.wav
+Test files/*.m4a
+Test files/*.flac
 
-# Transcription outputs
-*.csv
-results/
-output/
+# Transcription outputs (generated files only)
+benchmarks/results/*.csv
 
-# Secrets and configuration with sensitive data
+# Secrets and environment-specific configuration
 .env
 .env.local
-config.yaml
 
-# Logs
+# Log files (but keep logs directory and __init__.py)
 *.log
-logs/
+logs/*.log
 
 # OS
 .DS_Store
@@ -98,5 +91,13 @@ dmypy.json
 
 # Documentation builds
 docs/_build/
+
 site/
 
+# Frontend specific
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env.production.local
+frontend/.env.development.local
+frontend/package-lock.json

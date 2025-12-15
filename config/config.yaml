@@ -1,0 +1,24 @@
+defaults:
+  - logging: default
+  - _self_
+
+app:
+  name: voice-transcriber
+  environment: production
+
+monitoring:
+  enabled: true
+  port: 8000
+
+logging:
+  level: INFO
+  json: true
+  file: logs/app.log
+
+models:
+  registry_path: models/artifacts
+  use_dvc: true
+
+transcription:
+  engine: faster_whisper
+  max_workers: 4

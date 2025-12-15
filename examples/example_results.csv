@@ -1,0 +1,11 @@
+file_path,status,transcript,error_msg
+audio/sample1.wav,success,"سلام، این یک متن نمونه است. این ابزار برای رونویسی صوتی طراحی شده است.",
+audio/sample2.mp3,success,"این پروژه از موتورهای مختلفی برای رونویسی پشتیبانی می‌کند. شامل Whisper، Faster-Whisper و OpenAI API.",
+audio/sample3.wav,success,"امکان پردازش دسته‌ای فایل‌های صوتی با استفاده از پردازش موازی وجود دارد.",
+audio/sample4.ogg,failed,,Unsupported audio format: .ogg
+audio/sample5.mp3,success,"برای نصب این ابزار، ابتدا Python نسخه ۳.۸ یا بالاتر را نصب کنید.",
+audio/sample6.wav,success,"می‌توانید از CUDA برای شتاب‌دهی GPU استفاده کنید. این باعث سرعت بیشتر رونویسی می‌شود.",
+audio/missing.wav,failed,,File not found: audio/missing.wav
+audio/sample7.mp3,success,"این سیستم از نرمال‌سازی متن فارسی پشتیبانی می‌کند. حروف عربی به فارسی تبدیل می‌شوند.",
+audio/sample8.wav,success,"خروجی به صورت CSV ذخیره می‌شود. همچنین می‌توانید فرمت TXT یا JSON را انتخاب کنید.",
+audio/sample9.mp3,success,"برای استفاده از API OpenAI، باید کلید API را در متغیر محیطی OPENAI_API_KEY تنظیم کنید.",

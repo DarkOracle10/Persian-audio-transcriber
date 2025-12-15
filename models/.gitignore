@@ -1,0 +1,7 @@
+# Ignore model binaries
+*.bin
+*.pth
+*.pt
+*.onnx
+*.ckpt
+artifacts/
