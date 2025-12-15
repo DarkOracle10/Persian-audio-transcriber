@@ -1,5 +1,12 @@
 # Persian Audio Transcriber
 
+[![Tests Passing](https://github.com/DarkOracle10/persian-audio-transcriber/workflows/CI/badge.svg)](https://github.com/DarkOracle10/persian-audio-transcriber/actions)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/DarkOracle10/persian-audio-transcriber)](https://github.com/DarkOracle10/persian-audio-transcriber/stargazers)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue)](http://mypy-lang.org/)
+
 A fully-featured, GPU-accelerated audio transcription toolkit with Persian/Farsi language support, parallel batch processing, and multiple transcription engines.
 
 ## 🎯 Features
