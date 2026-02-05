@@ -1,6 +1,7 @@
 # Persian Audio Transcriber
 
 [![Tests Passing](https://github.com/DarkOracle10/persian-audio-transcriber/workflows/CI/badge.svg)](https://github.com/DarkOracle10/persian-audio-transcriber/actions)
+[![Coverage](https://img.shields.io/badge/coverage-35%25-yellow)](https://github.com/DarkOracle10/persian-audio-transcriber)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Stars](https://img.shields.io/github/stars/DarkOracle10/persian-audio-transcriber)](https://github.com/DarkOracle10/persian-audio-transcriber/stargazers)
@@ -50,6 +51,7 @@ A fully-featured, GPU-accelerated audio transcription toolkit with Persian/Farsi
 
 ## 📋 Table of Contents
 
+- [Demo](#demo)
 - [Features Showcase](#features-showcase)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -58,8 +60,30 @@ A fully-featured, GPU-accelerated audio transcription toolkit with Persian/Farsi
 - [Architecture](#architecture)
 - [Development](#development)
 - [Testing](#testing)
+- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
+
+## 🎬 Demo
+
+### Video Walkthrough
+> 📹 **2-minute demo coming soon!** Watch the full transcription process from audio to subtitles.
+
+### Quick Preview
+```bash
+# Install
+pip install -e .
+
+# Transcribe Persian audio
+persian-transcriber audio.mp3
+
+# Output with GPU acceleration
+[████████████████████] 100% | ETA: 0s | 15.2s elapsed
+✓ Transcription complete: audio.txt (2.3s with CUDA)
+```
+
+### Sample Output
+See [examples/](examples/) for real transcription examples with timestamps and confidence scores.
 
 ## ✨ Features Showcase
 
@@ -191,6 +215,15 @@ persian-transcriber video.mp4 -f srt
 # Batch process directory recursively
 persian-transcriber ./recordings/ -r --output-dir ./transcriptions
 ```
+
+### 🌐 Try It Online (Coming Soon)
+We're working on a web demo where you can:
+- Upload 30-second audio samples
+- See live transcription results
+- Compare different engines
+- No installation required
+
+**Want early access?** Star this repo and open an issue requesting demo access!
 
 ### Using Python API
 
@@ -448,6 +481,24 @@ black src/ tests/ && ruff check src/ tests/ && mypy src/ && pytest
 ### Adding a New Engine
 
 See `docs/CONTRIBUTING.md` for step-by-step guide on adding new transcription engines.
+
+## 🗺️ Roadmap
+
+### v1.1.0 (Next Release)
+- [ ] Web interface for live demos
+- [ ] Docker image on Docker Hub
+- [ ] PyPI package publication
+- [ ] Streaming audio support
+- [ ] Real-time transcription mode
+
+### Future
+- [ ] More language support (Arabic, Urdu)
+- [ ] Custom model training
+- [ ] Voice activity detection
+- [ ] Speaker diarization
+- [ ] API service deployment
+
+**Want to contribute to roadmap?** See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## 🤝 Contributing
 

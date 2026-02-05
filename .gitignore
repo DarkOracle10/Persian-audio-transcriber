@@ -79,6 +79,7 @@ desktop.ini
 # pytest
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 
 # mypy

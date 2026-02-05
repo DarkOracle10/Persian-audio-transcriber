@@ -83,19 +83,117 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ```bash
 # Clone repository
-git clone <repository-url>
-cd Voice-transcription-tool
+git clone https://github.com/DarkOracle10/Persian-audio-transcriber.git
+cd Persian-audio-transcriber
 
 # Create virtual environment
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 
 # Install dependencies
-pip install -r requirements.txt
+pip install --upgrade pip
+pip install setuptools wheel
+pip install -r requirements-dev.txt
 
 # Install in development mode
 pip install -e .
 ```
+
+## Running Tests Locally
+
+```bash
+# Run all tests
+pytest
+
+# Run tests with coverage
+pytest --cov=persian_transcriber --cov-report=term --cov-report=html
+
+# Run specific test file
+pytest tests/test_engines.py
+
+# Run tests matching a pattern
+pytest -k "test_engine"
+```
+
+## Code Style Guidelines
+
+We use several tools to maintain code quality:
+
+### Black - Code Formatting
+```bash
+# Format all code
+black src/ tests/
+
+# Check formatting without changes
+black --check src/ tests/
+```
+Configuration: 100 character line length
+
+### Ruff - Linting
+```bash
+# Check for issues
+ruff check src/ tests/
+
+# Auto-fix issues
+ruff check --fix src/ tests/
+```
+
+### Mypy - Type Checking
+```bash
+# Run type checks
+mypy src/persian_transcriber
+```
+We enforce strict type checking. All functions should have type hints.
+
+### Pre-commit Hooks (Recommended)
+```bash
+# Install pre-commit hooks
+pip install pre-commit
+pre-commit install
+
+# This will automatically run black, ruff, and mypy before each commit
+```
+
+## How to Add a New Transcription Engine
+
+Follow these steps to add a new transcription engine:
+
+1. **Create a new engine class** in `src/persian_transcriber/engines/`
+   - Inherit from `BaseTranscriptionEngine`
+   - Implement required methods: `transcribe()`, `is_available()`
+
+2. **Example structure:**
+   ```python
+   from .base import BaseTranscriptionEngine
+   
+   class MyNewEngine(BaseTranscriptionEngine):
+       def __init__(self, config: Dict[str, Any]) -> None:
+           super().__init__(config)
+           # Initialize your engine
+       
+       def transcribe(self, audio_path: str) -> str:
+           # Implement transcription logic
+           pass
+       
+       @classmethod
+       def is_available(cls) -> bool:
+           # Check if engine dependencies are available
+           return True
+   ```
+
+3. **Register the engine** in `src/persian_transcriber/engines/__init__.py`
+
+4. **Add tests** in `tests/test_engines.py`
+   - Test initialization
+   - Test transcription
+   - Test error handling
+
+5. **Update documentation:**
+   - Add engine to README.md
+   - Document configuration options
+   - Add usage examples
+
+For detailed architecture, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## Questions?
 

@@ -13,7 +13,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-
 # Default log format
 DEFAULT_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -162,9 +161,11 @@ class ColoredFormatter(logging.Formatter):
             try:
                 import ctypes
 
-                kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-                kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-                return True
+                if hasattr(ctypes, "windll"):
+                    kernel32 = ctypes.windll.kernel32
+                    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+                    return True
+                return False
             except Exception:
                 return False
 
