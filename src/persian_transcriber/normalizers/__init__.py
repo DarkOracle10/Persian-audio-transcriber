@@ -23,6 +23,7 @@ Example:
 """
 
 from enum import Enum
+from typing import Any, Union
 from typing import Union
 
 from .base import BaseNormalizer
@@ -52,7 +53,7 @@ class NormalizerType(str, Enum):
 
 def get_normalizer(
     normalizer_type: Union[str, NormalizerType] = NormalizerType.PERSIAN,
-    **kwargs,
+    **kwargs: Any,
 ) -> BaseNormalizer:
     """
     Factory function to create a normalizer instance.

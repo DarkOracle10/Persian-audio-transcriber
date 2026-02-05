@@ -387,7 +387,7 @@ def is_cuda_available() -> bool:
     try:
         import torch
 
-        return torch.cuda.is_available()
+        return bool(torch.cuda.is_available())
     except ImportError:
         logger.debug("PyTorch not installed, cannot check CUDA availability")
         return False
@@ -409,7 +409,7 @@ def is_mps_available() -> bool:
         import torch
 
         if hasattr(torch.backends, "mps"):
-            return torch.backends.mps.is_available()
+            return bool(torch.backends.mps.is_available())
         return False
     except ImportError:
         logger.debug("PyTorch not installed, cannot check MPS availability")

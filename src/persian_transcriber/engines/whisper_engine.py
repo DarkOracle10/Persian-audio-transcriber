@@ -162,14 +162,14 @@ class WhisperEngine(BaseEngine):
         if not self.is_loaded:
             self.load_model()
 
-        audio_path = Path(audio_path)
-        if not audio_path.exists():
+        _audio_path = Path(audio_path)
+        if not _audio_path.exists():
             raise EngineError(
-                f"Audio file not found: {audio_path}",
+                f"Audio file not found: {_audio_path}",
                 engine_name=self.name,
             )
 
-        logger.info(f"Transcribing with Whisper: {audio_path.name}")
+        logger.info(f"Transcribing with Whisper: {_audio_path.name}")
 
         try:
             result = self._model.transcribe(

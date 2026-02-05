@@ -92,6 +92,9 @@ dmypy.json
 # Documentation builds
 docs/_build/
 
+# Portfolio generator script
+scripts/generate_portfolio_persian_transcriber.py
+
 site/
 
 # Frontend specific

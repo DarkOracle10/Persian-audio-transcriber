@@ -152,15 +152,15 @@ class OpenAIAPIEngine(BaseEngine):
         if not self.is_loaded:
             self.load_model()
 
-        audio_path = Path(audio_path)
-        if not audio_path.exists():
+        _audio_path = Path(audio_path)
+        if not _audio_path.exists():
             raise EngineError(
-                f"Audio file not found: {audio_path}",
+                f"Audio file not found: {_audio_path}",
                 engine_name=self.name,
             )
 
         # Check file size
-        file_size_mb = audio_path.stat().st_size / (1024 * 1024)
+        file_size_mb = _audio_path.stat().st_size / (1024 * 1024)
         if file_size_mb > self.MAX_FILE_SIZE_MB:
             raise EngineError(
                 f"File too large ({file_size_mb:.1f} MB). "
@@ -168,10 +168,10 @@ class OpenAIAPIEngine(BaseEngine):
                 engine_name=self.name,
             )
 
-        logger.info(f"Transcribing with OpenAI API: {audio_path.name}")
+        logger.info(f"Transcribing with OpenAI API: {_audio_path.name}")
 
         try:
-            with open(audio_path, "rb") as audio_file:
+            with open(_audio_path, "rb") as audio_file:
                 response = self._client.audio.transcriptions.create(
                     model=self.model,
                     file=audio_file,
@@ -292,17 +292,17 @@ class OpenAIAPIEngine(BaseEngine):
         if not self.is_loaded:
             self.load_model()
 
-        audio_path = Path(audio_path)
-        if not audio_path.exists():
+        _audio_path = Path(audio_path)
+        if not _audio_path.exists():
             raise EngineError(
-                f"Audio file not found: {audio_path}",
+                f"Audio file not found: {_audio_path}",
                 engine_name=self.name,
             )
 
-        logger.info(f"Translating with OpenAI API: {audio_path.name}")
+        logger.info(f"Translating with OpenAI API: {_audio_path.name}")
 
         try:
-            with open(audio_path, "rb") as audio_file:
+            with open(_audio_path, "rb") as audio_file:
                 response = self._client.audio.translations.create(
                     model=self.model,
                     file=audio_file,

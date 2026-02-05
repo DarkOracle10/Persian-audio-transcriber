@@ -10,11 +10,11 @@ import glob
 import os
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from .config import TranscriberConfig, DeviceType, EngineConfig, NormalizerConfig, OutputConfig
 from .engines import get_engine, EngineType
-from .engines.base import BaseEngine, TranscriptionResult
+from .engines.base import BaseEngine, TranscriptionResult, TranscriptionSegment
 from .normalizers import get_normalizer, NormalizerType
 from .normalizers.base import BaseNormalizer
 from .output import get_formatter, OutputFormat
@@ -225,7 +225,7 @@ class PersianAudioTranscriber:
 
         # Prepare audio for transcription
         try:
-            audio_path_str, is_temp_file = prepare_audio_for_transcription(file_path)
+            audio_path_str, is_temp_file = prepare_audio_for_transcription(str(file_path))
             audio_path = Path(audio_path_str)
         except Exception as e:
             raise AudioProcessingError(f"Failed to prepare audio: {e}") from e
@@ -237,10 +237,10 @@ class PersianAudioTranscriber:
 
             # Normalize text
             normalized_text = self._normalize_text(result.text)
-            normalized_segments = []
+            normalized_segments: List[Dict[str, Any]] = []
 
             for segment in result.segments:
-                normalized_segment = {
+                normalized_segment: Dict[str, Any] = {
                     "start": segment.start,
                     "end": segment.end,
                     "text": self._normalize_text(segment.text),
@@ -273,7 +273,24 @@ class PersianAudioTranscriber:
                 else:
                     output_path = Path(output_path)
 
-                formatter.save(output, output_path)
+                # Create a result object with normalized text for saving
+                save_result = TranscriptionResult(
+                    text=normalized_text,
+                    text_raw=result.text,
+                    segments=[
+                        TranscriptionSegment(
+                            text=str(seg["text"]),
+                            start=cast(float, seg["start"]),
+                            end=cast(float, seg["end"]),
+                        )
+                        for seg in normalized_segments
+                    ],
+                    language=result.language,
+                    duration=result.duration,
+                    engine=self.engine.name,
+                    model=self._config.engine.model_size,
+                )
+                formatter.save(save_result, output_path)
                 output["output_path"] = str(output_path)
                 logger.info(f"Saved output to: {output_path}")
 

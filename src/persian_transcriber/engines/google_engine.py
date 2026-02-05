@@ -143,10 +143,10 @@ class GoogleEngine(BaseEngine):
 
         import speech_recognition as sr
 
-        audio_path = Path(audio_path)
-        if not audio_path.exists():
+        _audio_path = Path(audio_path)
+        if not _audio_path.exists():
             raise EngineError(
-                f"Audio file not found: {audio_path}",
+                f"Audio file not found: {_audio_path}",
                 engine_name=self.name,
             )
 
@@ -154,7 +154,7 @@ class GoogleEngine(BaseEngine):
         lang = language or self.default_language
         lang = self._normalize_language_code(lang)
 
-        logger.info(f"Transcribing with Google Speech Recognition: {audio_path.name}")
+        logger.info(f"Transcribing with Google Speech Recognition: {_audio_path.name}")
 
         # Convert to WAV if needed
         processing_path = self._prepare_audio(str(audio_path))

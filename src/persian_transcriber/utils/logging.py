@@ -52,7 +52,7 @@ ANSI_COLORS = {
 }
 
 # Module-level logger cache
-_loggers: dict = {}
+_loggers: Dict[str, logging.Logger] = {}
 _config_cache: Optional[Dict[str, Any]] = None
 _initialized: bool = False
 
@@ -156,17 +156,18 @@ class ColoredFormatter(logging.Formatter):
         if not hasattr(sys.stderr, "isatty") or not sys.stderr.isatty():
             return False
 
-        if sys.platform == "win32":
-            try:
-                import ctypes
+        if sys.platform != "win32":
+            return True
 
-                kernel32 = ctypes.windll.kernel32
-                kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-                return True
-            except Exception:
-                return False
+        # Windows-specific color support check
+        try:
+            import ctypes
 
-        return True
+            kernel32 = ctypes.windll.kernel32
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+            return True
+        except Exception:
+            return False
 
     def _get_color_code(self, level_name: str, level_no: int) -> str:
         """Get ANSI color code for a log level."""

@@ -21,7 +21,7 @@ class TranscriberError(Exception):
         ...     print(f"Transcription failed: {e}")
     """
 
-    def __init__(self, message: str, *args, **kwargs) -> None:
+    def __init__(self, message: str, *args: object, **kwargs: object) -> None:
         self.message = message
         super().__init__(message, *args, **kwargs)
 

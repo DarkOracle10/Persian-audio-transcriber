@@ -144,27 +144,27 @@ def extract_audio_from_video(
         >>> audio_path = extract_audio_from_video("video.mp4")
         >>> print(f"Audio extracted to: {audio_path}")
     """
-    video_path = Path(video_path)
+    _path = Path(video_path)
 
-    if not video_path.exists():
+    if not _path.exists():
         raise AudioProcessingError(
-            f"Video file not found: {video_path}",
-            file_path=str(video_path),
+            f"Video file not found: {_path}",
+            file_path=str(_path),
         )
 
-    if not is_video_file(str(video_path)):
+    if not is_video_file(str(_path)):
         raise UnsupportedFormatError(
-            str(video_path),
-            video_path.suffix,
+            str(_path),
+            _path.suffix,
         )
 
     try:
         from pydub import AudioSegment
 
-        logger.info(f"Extracting audio from video: {video_path.name}")
+        logger.info(f"Extracting audio from video: {_path.name}")
 
         # Load video file (pydub/ffmpeg handles the extraction)
-        audio = AudioSegment.from_file(str(video_path))
+        audio = AudioSegment.from_file(str(_path))
 
         # Convert to specified format
         audio = audio.set_frame_rate(sample_rate)
@@ -225,21 +225,21 @@ def convert_audio(
         >>> wav_path = convert_audio("audio.mp3", output_format="wav")
         >>> print(f"Converted to: {wav_path}")
     """
-    input_path = Path(input_path)
+    _input_path = Path(input_path)
 
-    if not input_path.exists():
+    if not _input_path.exists():
         raise AudioProcessingError(
-            f"Audio file not found: {input_path}",
-            file_path=str(input_path),
+            f"Audio file not found: {_input_path}",
+            file_path=str(_input_path),
         )
 
     try:
         from pydub import AudioSegment
 
-        logger.debug(f"Converting audio: {input_path.name} -> {output_format}")
+        logger.debug(f"Converting audio: {_input_path.name} -> {output_format}")
 
         # Load audio file
-        audio = AudioSegment.from_file(str(input_path))
+        audio = AudioSegment.from_file(str(_input_path))
 
         # Convert parameters
         audio = audio.set_frame_rate(sample_rate)
@@ -302,23 +302,23 @@ def prepare_audio_for_transcription(
         >>> if is_temp:
         ...     os.remove(audio_path)  # Clean up temporary file
     """
-    file_path = Path(file_path)
+    _file_path = Path(file_path)
 
-    if not file_path.exists():
+    if not _file_path.exists():
         raise AudioProcessingError(
-            f"File not found: {file_path}",
-            file_path=str(file_path),
+            f"File not found: {_file_path}",
+            file_path=str(_file_path),
         )
 
-    ext = file_path.suffix.lower()
+    ext = _file_path.suffix.lower()
 
     if ext not in SUPPORTED_FORMATS:
-        raise UnsupportedFormatError(str(file_path), ext)
+        raise UnsupportedFormatError(str(_file_path), ext)
 
     # If it's a video file, extract audio
     if ext in SUPPORTED_VIDEO_FORMATS:
         extracted_path = extract_audio_from_video(
-            str(file_path),
+            str(_file_path),
             sample_rate=target_sample_rate,
         )
         return extracted_path, True

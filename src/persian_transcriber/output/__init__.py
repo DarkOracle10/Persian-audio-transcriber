@@ -17,7 +17,7 @@ Example:
 """
 
 from enum import Enum
-from typing import Union
+from typing import Any, Union
 
 from .base import BaseFormatter
 from .json_formatter import JsonFormatter
@@ -52,7 +52,7 @@ class OutputFormat(str, Enum):
 
 def get_formatter(
     output_format: Union[str, OutputFormat] = OutputFormat.TXT,
-    **kwargs,
+    **kwargs: Any,
 ) -> BaseFormatter:
     """
     Factory function to create an output formatter.

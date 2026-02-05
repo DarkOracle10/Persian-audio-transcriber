@@ -6,7 +6,7 @@ Hazm NLP library. If Hazm is not available, use BasicNormalizer instead.
 """
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from .base import BaseNormalizer
 from .basic import BasicNormalizer
@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 
 # Try to import Hazm
 HAZM_AVAILABLE = False
-_HazmNormalizer = None
+_HazmNormalizerClass: Optional[type] = None
 
 try:
-    from hazm import Normalizer as _HazmNormalizer
+    from hazm import Normalizer as _HazmNormalizerImport
 
+    _HazmNormalizerClass = _HazmNormalizerImport
     HAZM_AVAILABLE = True
 except ImportError:
     logger.debug("Hazm library not available, will use BasicNormalizer as fallback")
@@ -72,13 +73,13 @@ class PersianNormalizer(BaseNormalizer):
             unicodes_replacement: Replace Unicode variants. Defaults to True.
             seperate_mi: Handle Persian "می" prefix spacing. Defaults to True.
         """
-        self._hazm_normalizer: Optional[object] = None
+        self._hazm_normalizer: Optional[Any] = None
         self._fallback_normalizer: Optional[BasicNormalizer] = None
         self.is_hazm_available: bool = False
 
-        if HAZM_AVAILABLE and _HazmNormalizer is not None:
+        if HAZM_AVAILABLE and _HazmNormalizerClass is not None:
             try:
-                self._hazm_normalizer = _HazmNormalizer(
+                self._hazm_normalizer = _HazmNormalizerClass(
                     remove_extra_spaces=remove_extra_spaces,
                     persian_style=persian_style,
                     persian_numbers=persian_numbers,
@@ -118,7 +119,8 @@ class PersianNormalizer(BaseNormalizer):
 
         if self._hazm_normalizer is not None:
             try:
-                return self._hazm_normalizer.normalize(text)
+                result: str = self._hazm_normalizer.normalize(text)
+                return result
             except Exception as e:
                 logger.warning(f"Hazm normalization failed: {e}, using fallback")
                 if self._fallback_normalizer is None:
@@ -148,7 +150,8 @@ class PersianNormalizer(BaseNormalizer):
 
         if self._hazm_normalizer is not None and hasattr(self._hazm_normalizer, "affix_spacing"):
             try:
-                return self._hazm_normalizer.affix_spacing(text)
+                result: str = self._hazm_normalizer.affix_spacing(text)
+                return result
             except Exception:
                 pass
 
