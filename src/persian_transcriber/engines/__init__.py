@@ -54,7 +54,7 @@ def get_engine(
 ) -> BaseEngine:
     """
     Factory function to create a transcription engine.
-    
+
     Args:
         engine_type: Type of engine to create. Options:
             - "whisper" or EngineType.WHISPER: Original OpenAI Whisper
@@ -67,20 +67,20 @@ def get_engine(
                 environment variables (OPENAI_API_KEY).
         device: Compute device ("cuda", "cpu", "auto"). Ignored for API-based engines.
         **kwargs: Additional engine-specific arguments.
-        
+
     Returns:
         BaseEngine: A configured transcription engine instance.
-        
+
     Raises:
         ValueError: If the engine type is not recognized.
-        
+
     Examples:
         >>> # Create Faster-Whisper engine (recommended for local inference)
         >>> engine = get_engine("faster_whisper", model_size="large-v3")
-        
+
         >>> # Create OpenAI API engine for cloud transcription
         >>> engine = get_engine("openai_api", api_key="sk-...")
-        
+
         >>> # Create engine with explicit device selection
         >>> engine = get_engine("whisper", model_size="medium", device="cuda")
     """
@@ -91,7 +91,7 @@ def get_engine(
             engine_type = EngineType(engine_type)
         except ValueError:
             pass
-    
+
     # Create appropriate engine
     if engine_type in (EngineType.WHISPER, "whisper"):
         return WhisperEngine(
@@ -99,26 +99,26 @@ def get_engine(
             device=device,
             **kwargs,
         )
-    
+
     if engine_type in (EngineType.FASTER_WHISPER, "faster_whisper"):
         return FasterWhisperEngine(
             model_size=model_size,
             device=device,
             **kwargs,
         )
-    
+
     if engine_type in (EngineType.OPENAI_API, "openai_api"):
         return OpenAIAPIEngine(
             api_key=api_key,
             **kwargs,
         )
-    
+
     if engine_type in (EngineType.GOOGLE, "google"):
         return GoogleEngine(
             api_key=api_key,
             **kwargs,
         )
-    
+
     raise ValueError(
         f"Unknown engine type: {engine_type}. "
         f"Available types: {', '.join(t.value for t in EngineType)}"

@@ -12,23 +12,23 @@ from .base import BaseFormatter
 class TxtFormatter(BaseFormatter):
     """
     Plain text output formatter.
-    
+
     Outputs the transcription as plain text. Can optionally include
     timestamps for each segment.
-    
+
     Example:
         >>> formatter = TxtFormatter()
         >>> text = formatter.format(result)
         >>> print(text)
         سلام این یک متن آزمایشی است.
-        
+
         >>> formatter = TxtFormatter(include_timestamps=True)
         >>> text = formatter.format(result)
         >>> print(text)
         [00:00:00 - 00:00:05] سلام
         [00:00:05 - 00:00:10] این یک متن آزمایشی است.
     """
-    
+
     def __init__(
         self,
         include_timestamps: bool = False,
@@ -37,7 +37,7 @@ class TxtFormatter(BaseFormatter):
     ) -> None:
         """
         Initialize the text formatter.
-        
+
         Args:
             include_timestamps: If True, include timestamps for each segment.
             include_metadata: If True, include metadata header.
@@ -46,29 +46,29 @@ class TxtFormatter(BaseFormatter):
         self.include_timestamps = include_timestamps
         self.include_metadata = include_metadata
         self.segment_separator = segment_separator
-    
+
     @property
     def name(self) -> str:
         """Get the formatter name."""
         return "Plain Text"
-    
+
     @property
     def extension(self) -> str:
         """Get the file extension."""
         return "txt"
-    
+
     def format(self, result: TranscriptionResult) -> str:
         """
         Format the transcription result as plain text.
-        
+
         Args:
             result: The transcription result to format.
-            
+
         Returns:
             str: The formatted text.
         """
         lines: list = []
-        
+
         # Add metadata header if requested
         if self.include_metadata:
             lines.append("=" * 60)
@@ -81,7 +81,7 @@ class TxtFormatter(BaseFormatter):
                 lines.append(f"Model: {result.model}")
             lines.append("=" * 60)
             lines.append("")
-        
+
         # Add transcription content
         if self.include_timestamps and result.segments:
             # Format with timestamps
@@ -92,16 +92,16 @@ class TxtFormatter(BaseFormatter):
         else:
             # Just the text
             lines.append(result.text)
-        
+
         return self.segment_separator.join(lines)
-    
+
     def _format_timestamp(self, seconds: float) -> str:
         """
         Format seconds as HH:MM:SS.
-        
+
         Args:
             seconds: Time in seconds.
-            
+
         Returns:
             str: Formatted timestamp.
         """
@@ -109,21 +109,21 @@ class TxtFormatter(BaseFormatter):
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
-    
+
     def _format_duration(self, seconds: float) -> str:
         """
         Format duration with more detail.
-        
+
         Args:
             seconds: Duration in seconds.
-            
+
         Returns:
             str: Formatted duration string.
         """
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         secs = seconds % 60
-        
+
         if hours > 0:
             return f"{hours}h {minutes}m {secs:.1f}s"
         elif minutes > 0:

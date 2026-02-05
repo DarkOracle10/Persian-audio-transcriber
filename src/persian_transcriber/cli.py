@@ -47,14 +47,15 @@ Examples:
 For more information, visit: https://github.com/DarkOracle10/persian-audio-transcriber
         """,
     )
-    
+
     # Version
     parser.add_argument(
-        "--version", "-V",
+        "--version",
+        "-V",
         action="version",
         version=f"%(prog)s {__version__}",
     )
-    
+
     # Input
     parser.add_argument(
         "input",
@@ -62,151 +63,160 @@ For more information, visit: https://github.com/DarkOracle10/persian-audio-trans
         type=str,
         help="Path to audio/video file or directory to transcribe",
     )
-    
+
     # Engine options
     engine_group = parser.add_argument_group("Engine Options")
-    
+
     engine_group.add_argument(
-        "-e", "--engine",
+        "-e",
+        "--engine",
         type=str,
         choices=[e.value for e in EngineType],
         default="faster_whisper",
         help="Transcription engine to use (default: faster_whisper)",
     )
-    
+
     engine_group.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         type=str,
         default="medium",
         help="Model size for Whisper engines (tiny, base, small, medium, large-v3)",
     )
-    
+
     engine_group.add_argument(
-        "-d", "--device",
+        "-d",
+        "--device",
         type=str,
         choices=["auto", "cuda", "cpu", "mps"],
         default="auto",
         help="Computation device (default: auto)",
     )
-    
+
     engine_group.add_argument(
         "--compute-type",
         type=str,
         choices=["float16", "int8", "int8_float16", "float32"],
         help="Compute type for Faster Whisper (default: auto-detected)",
     )
-    
+
     # Language options
     lang_group = parser.add_argument_group("Language Options")
-    
+
     lang_group.add_argument(
-        "-l", "--language",
+        "-l",
+        "--language",
         type=str,
         default="fa",
         help="Language code for transcription (default: fa)",
     )
-    
+
     lang_group.add_argument(
         "--no-normalize",
         action="store_true",
         help="Disable Persian text normalization",
     )
-    
+
     # Output options
     output_group = parser.add_argument_group("Output Options")
-    
+
     output_group.add_argument(
-        "-f", "--format",
+        "-f",
+        "--format",
         type=str,
         choices=[f.value for f in OutputFormat],
         default="txt",
         help="Output format (default: txt)",
     )
-    
+
     output_group.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         type=str,
         help="Output file path (default: same directory as input)",
     )
-    
+
     output_group.add_argument(
         "--output-dir",
         type=str,
         help="Output directory for batch processing",
     )
-    
+
     output_group.add_argument(
         "--no-save",
         action="store_true",
         help="Don't save output file, only print to stdout",
     )
-    
+
     output_group.add_argument(
         "--timestamps",
         action="store_true",
         help="Include timestamps in text output",
     )
-    
+
     # Batch processing options
     batch_group = parser.add_argument_group("Batch Processing")
-    
+
     batch_group.add_argument(
-        "-r", "--recursive",
+        "-r",
+        "--recursive",
         action="store_true",
         help="Recursively search directories for media files",
     )
-    
+
     batch_group.add_argument(
         "--skip-existing",
         action="store_true",
         default=True,
         help="Skip files that already have transcription output (default: True)",
     )
-    
+
     batch_group.add_argument(
         "--no-skip",
         action="store_true",
         help="Don't skip existing files, overwrite instead",
     )
-    
+
     # API options
     api_group = parser.add_argument_group("API Options")
-    
+
     api_group.add_argument(
         "--api-key",
         type=str,
         help="API key for OpenAI (can also use OPENAI_API_KEY env var)",
     )
-    
+
     # General options
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose output",
     )
-    
+
     parser.add_argument(
-        "-q", "--quiet",
+        "-q",
+        "--quiet",
         action="store_true",
         help="Suppress all output except errors",
     )
-    
+
     return parser
 
 
 def validate_input(path: str) -> Path:
     """Validate the input file or directory."""
     p = Path(path)
-    
+
     if not p.exists():
         raise FileNotFoundError(f"Input path not found: {path}")
-    
+
     if p.is_file() and p.suffix.lower() not in SUPPORTED_EXTENSIONS:
         raise ValueError(
             f"Unsupported file format: {p.suffix}\n"
             f"Supported formats: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
         )
-    
+
     return p
 
 
@@ -218,16 +228,16 @@ def print_progress(current: int, total: int, filename: str) -> None:
 def main(argv: Optional[List[str]] = None) -> int:
     """
     Main entry point for the CLI.
-    
+
     Args:
         argv: Command line arguments (defaults to sys.argv[1:]).
-        
+
     Returns:
         Exit code (0 for success, non-zero for errors).
     """
     parser = create_parser()
     args = parser.parse_args(argv)
-    
+
     # Setup logging
     if args.quiet:
         setup_logging(level="ERROR")
@@ -235,16 +245,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         setup_logging(verbose=True)
     else:
         setup_logging()
-    
+
     # Check for input
     if not args.input:
         parser.print_help()
         return 1
-    
+
     try:
         # Validate input
         input_path = validate_input(args.input)
-        
+
         # Build configuration
         config = TranscriberConfig(
             language=args.language,
@@ -262,14 +272,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             openai_api_key=args.api_key,
             verbose=args.verbose,
         )
-        
+
         # Disable normalization if requested
         if args.no_normalize:
             config.normalizer.enabled = False
-        
+
         # Create transcriber
         transcriber = PersianAudioTranscriber(config=config)
-        
+
         # Process
         if input_path.is_file():
             # Single file
@@ -278,7 +288,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 output_path=args.output,
                 save_output=not args.no_save,
             )
-            
+
             if args.no_save:
                 # Print result to stdout
                 print(result["text"])
@@ -286,11 +296,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                 print(f"\n✓ Transcription saved to: {result.get('output_path', 'N/A')}")
                 print(f"  Duration: {result.get('duration', 0):.2f}s")
                 print(f"  Processing time: {result.get('processing_time', 0):.2f}s")
-        
+
         else:
             # Directory (batch)
             skip_existing = not args.no_skip
-            
+
             results = transcriber.scan_and_transcribe(
                 input_path,
                 recursive=args.recursive,
@@ -298,32 +308,32 @@ def main(argv: Optional[List[str]] = None) -> int:
                 output_directory=args.output_dir,
                 progress_callback=None if args.quiet else print_progress,
             )
-            
+
             # Summary
             successful = sum(1 for r in results if "error" not in r)
             print(f"\n✓ Batch processing complete")
             print(f"  Successful: {successful}/{len(results)}")
-            
+
             if successful < len(results):
                 failed = [r for r in results if "error" in r]
                 print(f"  Failed files:")
                 for r in failed:
                     print(f"    - {r.get('file', 'Unknown')}: {r.get('error', 'Unknown error')}")
-        
+
         return 0
-    
+
     except FileNotFoundError as e:
         logger.error(str(e))
         return 1
-    
+
     except ValueError as e:
         logger.error(str(e))
         return 1
-    
+
     except KeyboardInterrupt:
         print("\nInterrupted by user")
         return 130
-    
+
     except Exception as e:
         logger.exception(f"Unexpected error: {e}")
         return 1

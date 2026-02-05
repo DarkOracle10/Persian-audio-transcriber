@@ -11,7 +11,9 @@ from typing import Dict, Iterable, Tuple
 import pytest
 
 
-def _write_silence_wav(path: Path, duration_seconds: float = 1.0, sample_rate: int = 16_000) -> None:
+def _write_silence_wav(
+    path: Path, duration_seconds: float = 1.0, sample_rate: int = 16_000
+) -> None:
     """Create a silent mono WAV file for testing purposes."""
     frames = int(duration_seconds * sample_rate)
     path.parent.mkdir(parents=True, exist_ok=True)

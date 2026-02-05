@@ -40,12 +40,12 @@ __all__ = [
 
 class OutputFormat(str, Enum):
     """Enumeration of available output formats."""
-    
+
     TXT = "txt"
     JSON = "json"
     SRT = "srt"
     VTT = "vtt"
-    
+
     def __str__(self) -> str:
         return self.value
 
@@ -56,7 +56,7 @@ def get_formatter(
 ) -> BaseFormatter:
     """
     Factory function to create an output formatter.
-    
+
     Args:
         output_format: Format type to create. Options:
             - "txt" or OutputFormat.TXT: Plain text
@@ -64,13 +64,13 @@ def get_formatter(
             - "srt" or OutputFormat.SRT: SRT subtitles
             - "vtt" or OutputFormat.VTT: WebVTT subtitles
         **kwargs: Additional arguments passed to formatter constructor.
-        
+
     Returns:
         BaseFormatter: A configured formatter instance.
-        
+
     Raises:
         ValueError: If the format type is not recognized.
-        
+
     Examples:
         >>> formatter = get_formatter("txt")
         >>> formatter = get_formatter(OutputFormat.JSON, indent=4)
@@ -79,19 +79,19 @@ def get_formatter(
     # Normalize format type
     if isinstance(output_format, str):
         output_format = output_format.lower()
-    
+
     if output_format in (OutputFormat.TXT, "txt", "text"):
         return TxtFormatter(**kwargs)
-    
+
     if output_format in (OutputFormat.JSON, "json"):
         return JsonFormatter(**kwargs)
-    
+
     if output_format in (OutputFormat.SRT, "srt"):
         return SrtFormatter(**kwargs)
-    
+
     if output_format in (OutputFormat.VTT, "vtt", "webvtt"):
         return VttFormatter(**kwargs)
-    
+
     raise ValueError(
         f"Unknown output format: {output_format}. "
         f"Available formats: {', '.join(f.value for f in OutputFormat)}"

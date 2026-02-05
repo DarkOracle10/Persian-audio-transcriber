@@ -19,6 +19,7 @@ _HazmNormalizer = None
 
 try:
     from hazm import Normalizer as _HazmNormalizer
+
     HAZM_AVAILABLE = True
 except ImportError:
     logger.debug("Hazm library not available, will use BasicNormalizer as fallback")
@@ -30,29 +31,29 @@ except Exception as e:
 class PersianNormalizer(BaseNormalizer):
     """
     Advanced Persian text normalizer using Hazm library.
-    
+
     This normalizer uses the Hazm NLP library for comprehensive
     Persian text normalization, including:
-    
+
     - Arabic to Persian character conversion
     - Spacing corrections (half-space handling)
     - Punctuation normalization
     - Number normalization
     - Affix spacing
-    
+
     If Hazm is not available, falls back to BasicNormalizer.
-    
+
     Example:
         >>> normalizer = PersianNormalizer()
         >>> normalizer.normalize("سلام   دنيا!")
         'سلام دنیا!'
         >>> normalizer.is_hazm_available
         True  # or False if Hazm not installed
-    
+
     Attributes:
         is_hazm_available: Whether Hazm library is being used.
     """
-    
+
     def __init__(
         self,
         remove_extra_spaces: bool = True,
@@ -63,7 +64,7 @@ class PersianNormalizer(BaseNormalizer):
     ) -> None:
         """
         Initialize the Persian normalizer.
-        
+
         Args:
             remove_extra_spaces: Remove extra whitespace. Defaults to True.
             persian_style: Apply Persian-style formatting. Defaults to True.
@@ -74,7 +75,7 @@ class PersianNormalizer(BaseNormalizer):
         self._hazm_normalizer: Optional[object] = None
         self._fallback_normalizer: Optional[BasicNormalizer] = None
         self.is_hazm_available: bool = False
-        
+
         if HAZM_AVAILABLE and _HazmNormalizer is not None:
             try:
                 self._hazm_normalizer = _HazmNormalizer(
@@ -92,29 +93,29 @@ class PersianNormalizer(BaseNormalizer):
         else:
             logger.info("Hazm not available, using BasicNormalizer")
             self._fallback_normalizer = BasicNormalizer(convert_numerals=persian_numbers)
-    
+
     @property
     def name(self) -> str:
         """Return the normalizer name."""
         if self.is_hazm_available:
             return "PersianNormalizer (Hazm)"
         return "PersianNormalizer (Basic fallback)"
-    
+
     def normalize(self, text: str) -> str:
         """
         Normalize Persian text.
-        
+
         Uses Hazm library if available, otherwise falls back to BasicNormalizer.
-        
+
         Args:
             text: The text to normalize.
-            
+
         Returns:
             str: The normalized text.
         """
         if not text:
             return ""
-        
+
         if self._hazm_normalizer is not None:
             try:
                 return self._hazm_normalizer.normalize(text)
@@ -123,32 +124,32 @@ class PersianNormalizer(BaseNormalizer):
                 if self._fallback_normalizer is None:
                     self._fallback_normalizer = BasicNormalizer()
                 return self._fallback_normalizer.normalize(text)
-        
+
         if self._fallback_normalizer is not None:
             return self._fallback_normalizer.normalize(text)
-        
+
         # Last resort: return text as-is
         return text
-    
+
     def affix_spacing(self, text: str) -> str:
         """
         Correct spacing around Persian affixes.
-        
+
         Only available when Hazm is installed.
-        
+
         Args:
             text: The text to process.
-            
+
         Returns:
             str: Text with corrected affix spacing.
         """
         if not text:
             return ""
-        
-        if self._hazm_normalizer is not None and hasattr(self._hazm_normalizer, 'affix_spacing'):
+
+        if self._hazm_normalizer is not None and hasattr(self._hazm_normalizer, "affix_spacing"):
             try:
                 return self._hazm_normalizer.affix_spacing(text)
             except Exception:
                 pass
-        
+
         return text

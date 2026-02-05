@@ -23,7 +23,9 @@ def _make_media_files(base_dir: Path, names: List[str]) -> List[Path]:
     return created
 
 
-def test_scan_transcribe_processes_supported_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_scan_transcribe_processes_supported_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     media_names = ["clip_a.wav", "clip_b.mp3", "ignore.txt"]
     _make_media_files(tmp_path, media_names)
 
@@ -42,7 +44,9 @@ def test_scan_transcribe_processes_supported_files(tmp_path: Path, monkeypatch: 
     assert len(results) == 2
 
 
-def test_scan_transcribe_skips_existing_outputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_scan_transcribe_skips_existing_outputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     media_file = tmp_path / "interview.wav"
     media_file.write_bytes(b"fake")
     existing_output = tmp_path / "interview.txt"

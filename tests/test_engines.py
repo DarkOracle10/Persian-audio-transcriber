@@ -103,7 +103,9 @@ def test_openai_engine_initialization(monkeypatch: pytest.MonkeyPatch) -> None:
         engine.load_model()
 
 
-def test_openai_engine_api_call(mock_openai_client, mock_audio_file: Path) -> None:  # pylint: disable=unused-argument
+def test_openai_engine_api_call(
+    mock_openai_client, mock_audio_file: Path
+) -> None:  # pylint: disable=unused-argument
     engine = OpenAIAPIEngine(api_key="test-key")
     result = engine.transcribe(str(mock_audio_file), language="fa")
     assert result.text == "متن تست"
