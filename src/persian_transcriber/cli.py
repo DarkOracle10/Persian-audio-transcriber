@@ -17,7 +17,6 @@ from .output import OutputFormat
 from .transcriber import PersianAudioTranscriber, SUPPORTED_EXTENSIONS
 from .utils.logging import setup_logging, get_logger
 
-
 logger = get_logger(__name__)
 
 
